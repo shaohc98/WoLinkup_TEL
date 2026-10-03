@@ -1,5 +1,27 @@
 {
   "name": "@wolinkup/observability",
   "version": "0.1.0",
-  "private": true
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "catalog:",
+    "pino": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
 }

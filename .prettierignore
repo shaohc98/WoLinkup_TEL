@@ -1,9 +1,11 @@
 node_modules/
 .pnpm-store/
 .turbo/
+.next/
 archive/
 dist/
 coverage/
+*.tsbuildinfo
 pnpm-lock.yaml
 docs/**/*.docx
 docs/02-product-design/prototypes/legacy/**

@@ -8,6 +8,8 @@ const failures = [];
 
 const requiredFiles = [
   "README.md",
+  "eslint.config.mjs",
+  "vitest.config.ts",
   "docs/README.md",
   "docs/00-governance/document-review-and-project-structure.md",
   "docs/01-requirements/WoLinkup_TEL需求规格说明书_V1.0.docx",
@@ -18,8 +20,14 @@ const requiredFiles = [
   "database/migrations/README.md",
   "integrations/payment-platform/README.md",
   "integrations/suppliers/supplier-spi/README.md",
+  "apps/international-web/src/app/page.tsx",
+  "apps/china-h5/src/app/page.tsx",
+  "apps/operations-console/src/app/page.tsx",
+  "apps/tel-api/src/main.ts",
+  "apps/tel-worker/src/main.ts",
   "packages/api-contracts/README.md",
   "packages/event-contracts/README.md",
+  "tests/architecture/workspace-boundaries.test.ts",
 ];
 
 for (const path of requiredFiles) {

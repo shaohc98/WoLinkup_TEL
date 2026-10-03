@@ -2,6 +2,7 @@
   "name": "@wolinkup/root",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "WoLinkup TEL global mobile top-up platform monorepo",
   "packageManager": "pnpm@11.1.1",
   "engines": {
@@ -10,17 +11,28 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present run build",
-    "dev": "pnpm -r --parallel --if-present run dev",
+    "clean": "pnpm -r --if-present run clean",
+    "dev": "pnpm --parallel --filter @wolinkup/international-web --filter @wolinkup/china-h5 --filter @wolinkup/operations-console --filter @wolinkup/tel-api --filter @wolinkup/tel-worker run dev",
+    "dev:api": "pnpm --filter @wolinkup/tel-api run dev",
+    "dev:china": "pnpm --filter @wolinkup/china-h5 run dev",
+    "dev:international": "pnpm --filter @wolinkup/international-web run dev",
+    "dev:operations": "pnpm --filter @wolinkup/operations-console run dev",
+    "dev:worker": "pnpm --filter @wolinkup/tel-worker run dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "pnpm -r --if-present run lint",
-    "test": "pnpm -r --if-present run test",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "pnpm -r --if-present run typecheck",
     "verify": "node scripts/verify-repo.mjs"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "prettier": "^3.0.0",
-    "typescript": "^6.0.0"
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   }
 }
