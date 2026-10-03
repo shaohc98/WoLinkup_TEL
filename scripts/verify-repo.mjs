@@ -82,8 +82,15 @@ const pcPortalPrototypeCount = await verifyChecksums(
   "docs/02-product-design/prototypes/pc-portal/v1.0/SHA256SUMS",
   "PC portal prototype V1.0",
 );
+const chinaH5PrototypeCount = await verifyChecksums(
+  "docs/02-product-design/prototypes/china-h5/v1.0/SHA256SUMS",
+  "China H5 prototype V1.0",
+);
 const prototypeCount =
-  legacyPrototypeCount + operationsPrototypeCount + pcPortalPrototypeCount;
+  legacyPrototypeCount +
+  operationsPrototypeCount +
+  pcPortalPrototypeCount +
+  chinaH5PrototypeCount;
 
 const packagePatterns = [
   ["apps", 1],

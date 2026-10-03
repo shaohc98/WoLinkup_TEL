@@ -8,3 +8,5 @@ docs/02-product-design/prototypes/**/*.html -text -diff -whitespace
 docs/02-product-design/prototypes/pc-portal/v1.0/app.js -text -diff -whitespace
 docs/02-product-design/prototypes/pc-portal/v1.0/index.html -text -diff -whitespace
 docs/02-product-design/prototypes/pc-portal/v1.0/style.css -text -diff -whitespace
+docs/02-product-design/prototypes/china-h5/v1.0/_data.js -text -diff -whitespace
+docs/02-product-design/prototypes/china-h5/v1.0/global_data.js -text -diff -whitespace
