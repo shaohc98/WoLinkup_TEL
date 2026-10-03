@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>全球话费充值 · 产品原型</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #EEF1EF;
+    --card: #FFFFFF;
+    --ink: #1B2430;
+    --muted: #6C7883;
+    --line: #DCE2E0;
+    --teal: #0F5C6B;
+    --teal-soft: #E3EFF1;
+    --red: #D8412A;
+    --red-soft: #FBE9E5;
+    --green: #1E8E5A;
+    --amber: #C7860B;
+    --amber-soft: #FBF1DC;
+    --r-lg: 18px;
+    --r-md: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: var(--paper); color: var(--ink); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid #7FB7C3; outline-offset: 2px; }
+  input { font: inherit; }
+  .flag { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+
+  /* ===== stage ===== */
+  .stage { min-height: 100vh; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 48px; padding: 40px 24px; }
+  .intro { justify-self: end; max-width: 300px; }
+  .intro h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 12px; line-height: 1.25; }
+  .intro p { color: var(--muted); margin: 0 0 10px; font-size: 14px; }
+  .intro .flow { margin: 20px 0 0; padding: 0; list-style: none; border-left: 2px solid var(--line); }
+  .intro .flow li { padding: 5px 0 5px 14px; font-size: 14px; color: var(--muted); position: relative; }
+  .intro .flow li::before { content: ""; position: absolute; left: -6px; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .intro .flow li.on { color: var(--ink); font-weight: 500; }
+  .intro .flow li.on::before { background: var(--teal); }
+  .intro .flow li.done::before { background: var(--green); }
+
+  .console { justify-self: start; width: 300px; }
+  .console h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+  .console .hint { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+  .scenario { display: grid; gap: 8px; }
+  .scenario label { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); cursor: pointer; font-size: 14px; }
+  .scenario label:has(input:checked) { border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
+  .scenario input { margin-top: 3px; accent-color: var(--teal); }
+  .scenario small { display: block; color: var(--muted); font-size: 12px; }
+  .log { margin-top: 18px; }
+  .log h2 { margin-bottom: 8px; }
+  .log ol { margin: 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--muted); max-height: 200px; overflow: auto; }
+  .log li { padding: 5px 0; border-top: 1px dashed var(--line); display: flex; gap: 10px; }
+  .log li time { color: var(--ink); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+  .log .empty { border: 0; }
+
+  /* ===== phone ===== */
+  .phone { width: 390px; height: 800px; background: #111; border-radius: 48px; padding: 12px; box-shadow: 0 30px 60px -20px rgba(27,36,48,.45), 0 0 0 1px rgba(0,0,0,.4); }
+  .screen { background: var(--paper); height: 100%; border-radius: 38px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+  .statusbar { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 26px; font-size: 13px; font-weight: 600; flex: 0 0 auto; }
+  .statusbar .notch { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); width: 110px; height: 30px; background: #111; border-radius: 20px; }
+  .view { flex: 1; overflow-y: auto; overscroll-behavior: contain; display: none; flex-direction: column; }
+  .view.on { display: flex; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 6px 18px 10px; font-size: 17px; font-weight: 600; flex: 0 0 auto; }
+  .topbar .back { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; margin-left: -8px; font-size: 24px; line-height: 1; }
+  .topbar .back:hover { background: rgba(0,0,0,.05); }
+  .topbar .right { font-size: 14px; font-weight: 400; color: var(--muted); }
+  .topbar .sp { width: 32px; }
+  .pad { padding: 0 16px; }
+  .card { background: var(--card); border-radius: var(--r-lg); padding: 16px; margin-bottom: 12px; }
+  .sec-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .sec-h h3 { font-size: 15px; font-weight: 600; margin: 0; }
+  .sec-h span { font-size: 12px; color: var(--muted); }
+  .note { font-size: 12.5px; color: var(--muted); }
+  .note b { color: var(--ink); font-weight: 500; }
+  .note.warn, .note.warn b { color: var(--amber); }
+
+  /* notice / 注意事项 */
+  .notice { background: var(--amber-soft); border-radius: var(--r-lg); padding: 14px 16px; margin: 0 0 12px; }
+  .notice summary { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--amber); cursor: pointer; list-style: none; }
+  .notice summary::-webkit-details-marker { display: none; }
+  .notice summary .ico { flex: 0 0 auto; display: flex; }
+  .notice summary .chev { margin-left: auto; color: var(--amber); font-size: 15px; transition: transform .15s ease; }
+  .notice[open] summary .chev { transform: rotate(90deg); }
+  .notice ol { margin: 12px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--ink); line-height: 1.6; }
+  .notice ol li + li { margin-top: 6px; }
+  .notice .notice-warn { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid rgba(199,134,11,.25); font-size: 12.5px; font-weight: 500; color: var(--amber); line-height: 1.6; }
+
+  /* country row */
+  .country-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 2px 0 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  .country-row .flag { font-size: 28px; line-height: 1; }
+  .country-row .nm { flex: 1; }
+  .country-row .nm b { display: block; font-weight: 600; font-size: 16px; }
+  .country-row .nm span { font-size: 12px; color: var(--muted); }
+  .country-row .chev { color: var(--muted); font-size: 18px; }
+
+  /* number entry */
+  .lbl { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+  .lbl button { color: var(--teal); font-size: 13px; }
+  .numwrap { display: flex; align-items: center; gap: 10px; margin-top: 4px; border-bottom: 2px solid var(--line); transition: border-color .15s; }
+  .numwrap:focus-within { border-bottom-color: var(--teal); }
+  .numwrap.bad { border-bottom-color: var(--red); }
+  .numwrap .cc { font-size: 22px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; padding: 6px 0; flex: 0 0 auto; }
+  .numinput { flex: 1; min-width: 0; border: 0; background: transparent; padding: 6px 0; font-size: 28px; font-weight: 600; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .numinput::placeholder { color: #B9C2C8; font-weight: 400; letter-spacing: 0.02em; font-size: 20px; }
+  .clear { width: 26px; height: 26px; border-radius: 50%; background: #E4E9E7; color: #55626C; display: none; place-items: center; font-size: 14px; flex: 0 0 auto; }
+  .clear.show { display: grid; }
+  .numhint { min-height: 22px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .numhint.err { color: var(--red); }
+  .numhint.ok { color: var(--green); }
+
+  /* operator dropdown */
+  .dd { position: relative; }
+  .dd-trigger { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 12px; border-radius: var(--r-md); border: 1.5px solid var(--line); background: var(--card); transition: border-color .12s; }
+  .dd-trigger:hover:not([disabled]) { border-color: #B9CBCF; }
+  .dd-trigger[disabled] { cursor: default; }
+  .dd-trigger[disabled] .nm b { color: var(--muted); font-weight: 400; }
+  .dd-trigger.open { border-color: var(--teal); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .dd .av { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px; flex: 0 0 auto; letter-spacing: -0.02em; }
+  .dd .av.ph { background: var(--paper); border: 1.5px dashed var(--line); }
+  .dd .nm { flex: 1; min-width: 0; }
+  .dd .nm b { font-weight: 600; display: block; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dd .nm span { font-size: 12px; color: var(--muted); }
+  .dd .pill { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: #E1F3EA; color: var(--green); font-weight: 500; flex: 0 0 auto; }
+  .dd .pill.m { background: var(--amber-soft); color: var(--amber); }
+  .dd .chev { width: 20px; height: 20px; color: var(--muted); flex: 0 0 auto; transition: transform .15s; }
+  .dd-trigger.open .chev { transform: rotate(180deg); }
+  .dd-list { display: none; margin: 0; padding: 0; list-style: none; border: 1.5px solid var(--teal); border-top: 0; border-radius: 0 0 var(--r-md) var(--r-md); background: var(--card); max-height: 264px; overflow-y: auto; }
+  .dd-list.on { display: block; }
+  .dd-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 12px; border-top: 1px solid var(--line); }
+  .dd-opt:hover { background: #F6F8F7; }
+  .dd-opt.on { background: var(--teal-soft); }
+  .dd-opt .tick { width: 18px; height: 18px; color: var(--teal); flex: 0 0 auto; visibility: hidden; }
+  .dd-opt.on .tick { visibility: visible; }
+
+  /* amount grid */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tile { position: relative; background: var(--paper); border-radius: var(--r-md); padding: 13px 6px 10px; text-align: center; border: 1.5px solid transparent; transition: background .12s, border-color .12s, color .12s; }
+  .tile .face { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; white-space: nowrap; }
+  .tile .face small { font-size: 11px; font-weight: 500; margin-left: 2px; color: var(--muted); }
+  .tile .face.mid { font-size: 17px; }
+  .tile .face.long { font-size: 14px; letter-spacing: 0; }
+  .tile .price { font-size: 12px; color: var(--red); margin-top: 5px; font-variant-numeric: tabular-nums; }
+  .tile .badge { position: absolute; top: -7px; right: -4px; font-size: 10px; padding: 1px 6px; border-radius: 6px 6px 6px 0; background: var(--red); color: #fff; font-weight: 500; }
+  .tile:hover { border-color: #C5D3D6; }
+  .tile.on { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .tile.on .price, .tile.on .face small { color: rgba(255,255,255,.85); }
+  .tile.custom .face { font-size: 15px; font-weight: 500; padding-top: 3px; }
+  .grid.off { opacity: .4; pointer-events: none; }
+  .custom-box { display: none; margin-top: 10px; padding: 10px 12px; border-radius: var(--r-md); background: var(--paper); align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+  .custom-box.on { display: flex; }
+  .custom-box input { flex: 1; min-width: 0; border: 0; background: transparent; font-size: 20px; font-weight: 600; }
+  .custom-box .cur { color: var(--muted); font-weight: 500; }
+  .custom-box .cny { font-size: 13px; color: var(--red); }
+  .custom-box.bad { box-shadow: inset 0 0 0 1.5px var(--red); }
+  .arrive { margin-top: 12px; }
+  .fine { font-size: 12px; color: var(--muted); padding: 4px 16px 16px; }
+  .fine a { color: var(--teal); text-decoration: none; }
+
+  /* paybar */
+  .paybar { position: sticky; bottom: 0; margin-top: auto; background: var(--card); padding: 12px 16px 14px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .paybar .sum { font-size: 12px; color: var(--muted); }
+  .paybar .sum b { display: block; font-size: 22px; color: var(--red); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .paybar .sum b small { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .btn { background: var(--teal); color: #fff; font-weight: 600; font-size: 16px; padding: 0 28px; height: 48px; border-radius: 999px; min-width: 150px; transition: transform .08s, opacity .12s; }
+  .btn:active { transform: scale(.98); }
+  .btn[disabled] { opacity: .35; cursor: not-allowed; }
+  .btn.ghost { background: var(--teal-soft); color: var(--teal); }
+  .btn.wide { width: 100%; }
+
+  /* tabs */
+  .tabs { flex: 0 0 auto; display: flex; background: var(--card); border-top: 1px solid var(--line); padding: 6px 0 20px; }
+  .tabs button { flex: 1; display: grid; gap: 3px; justify-items: center; font-size: 11px; color: var(--muted); padding: 6px 0; }
+  .tabs button.on { color: var(--teal); }
+  .tabs svg { width: 22px; height: 22px; }
+
+  /* country picker view */
+  .search { margin: 0 16px 10px; display: flex; align-items: center; gap: 8px; background: var(--card); border-radius: 999px; padding: 8px 14px; }
+  .search svg { width: 18px; height: 18px; color: var(--muted); flex: 0 0 auto; }
+  .search input { flex: 1; border: 0; background: transparent; font-size: 15px; min-width: 0; }
+  .grp { font-size: 12px; color: var(--muted); padding: 8px 20px 4px; }
+  .clist { margin: 0 16px 10px; background: var(--card); border-radius: var(--r-lg); overflow: hidden; }
+  .crow { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 11px 16px; border-top: 1px solid var(--line); }
+  .crow:first-child { border-top: 0; }
+  .crow:hover { background: #F6F8F7; }
+  .crow .flag { font-size: 24px; line-height: 1; }
+  .crow .nm { flex: 1; min-width: 0; }
+  .crow .nm b { font-weight: 500; display: block; font-size: 15px; }
+  .crow .nm span { font-size: 12px; color: var(--muted); }
+  .crow .cc { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 14px; }
+  .crow.on .cc { color: var(--teal); font-weight: 600; }
+  .noresult { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 14px; }
+
+  /* sheet */
+  .sheet-mask { position: absolute; inset: 0; background: rgba(27,36,48,.45); display: none; align-items: flex-end; z-index: 5; }
+  .sheet-mask.on { display: flex; }
+  .sheet { width: 100%; background: var(--card); border-radius: 22px 22px 0 0; padding: 18px 20px 24px; animation: up .22s ease-out; max-height: 92%; overflow-y: auto; }
+  @keyframes up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .sheet .hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 600; }
+  .sheet .hd button { color: var(--muted); font-size: 22px; line-height: 1; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 14px; }
+  .row span:first-child { color: var(--muted); flex: 0 0 auto; }
+  .row span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .row.total { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 12px; font-weight: 600; }
+  .row.total span:last-child { color: var(--red); font-size: 18px; }
+  .paylist { margin: 12px 0 16px; display: grid; gap: 8px; }
+  .paylist label { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); cursor: pointer; font-size: 14px; }
+  .paylist label:has(input:checked) { border-color: var(--teal); background: var(--teal-soft); }
+  .paylist input { accent-color: var(--teal); margin: 0; }
+  .paylist .ico { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 600; }
+  .paylist .bal { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+  /* processing + result */
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; padding: 12px 24px 24px; }
+  .center > :first-child { margin-top: auto; }
+  .center > :last-child { margin-bottom: auto; }
+  .spinner { width: 54px; height: 54px; border-radius: 50%; border: 4px solid var(--teal-soft); border-top-color: var(--teal); animation: spin .9s linear infinite; margin-bottom: 18px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .center h2 { font-size: 20px; margin: 0 0 6px; font-weight: 600; }
+  .center p { color: var(--muted); margin: 0; font-size: 14px; }
+  .mark { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 16px; }
+  .mark svg { width: 36px; height: 36px; }
+  .mark.ok { background: #E1F3EA; color: var(--green); }
+  .mark.wait { background: var(--amber-soft); color: var(--amber); }
+  .mark.fail { background: var(--red-soft); color: var(--red); }
+  .big-amt { font-size: 38px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin: 12px 0 0; line-height: 1.1; }
+  .big-amt small { font-size: 16px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .big-sub { font-size: 13px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .result-card { width: 100%; margin-top: 18px; text-align: left; }
+  .result-card .row { font-size: 13px; }
+  .actions { width: 100%; display: grid; gap: 10px; margin-top: 16px; }
+  .steps { list-style: none; padding: 0; margin: 10px 0 0; width: 100%; text-align: left; font-size: 13px; }
+  .steps li { position: relative; padding: 0 0 12px 22px; color: var(--muted); }
+  .steps li::before { content: ""; position: absolute; left: 5px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .steps li::after { content: ""; position: absolute; left: 8.5px; top: 16px; bottom: -2px; width: 1px; background: var(--line); }
+  .steps li:last-child::after { display: none; }
+  .steps li.done { color: var(--ink); }
+  .steps li.done::before { background: var(--green); }
+  .steps li.cur { color: var(--amber); font-weight: 500; }
+  .steps li.cur::before { background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+  .steps li.bad { color: var(--red); }
+  .steps li.bad::before { background: var(--red); }
+
+  /* orders */
+  .order { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+  .order .av { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 700; flex: 0 0 auto; }
+  .order .body { flex: 1; min-width: 0; }
+  .order .t { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .order .t b { font-weight: 600; font-size: 14.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .order .t .amt { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .order .m { font-size: 12px; color: var(--muted); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
+  .st { font-size: 12px; padding: 1px 7px; border-radius: 5px; font-weight: 500; white-space: nowrap; }
+  .st.ok { background: #E1F3EA; color: var(--green); }
+  .st.wait { background: var(--amber-soft); color: var(--amber); }
+  .st.fail { background: var(--red-soft); color: var(--red); }
+  .empty-orders { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 14px; }
+  .empty-orders button { color: var(--teal); font-weight: 500; margin-top: 8px; }
+
+  .toast { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%) translateY(10px); background: rgba(27,36,48,.92); color: #fff; padding: 9px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 9; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+
+  .c-wx { background: #07C160; } .c-ali { background: #1677FF; } .c-wal { background: var(--teal); }
+
+
+  /* ===== 顶栏图标按钮 / 权益条 ===== */
+  .topbar .right { display: inline-flex; align-items: center; gap: 4px; }
+  .iconbtn { width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--muted); }
+  .iconbtn:hover { background: rgba(0,0,0,.05); }
+  .iconbtn svg { width: 20px; height: 20px; }
+  .perk { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--teal); color: #fff; }
+  .perk .perk-ico { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.16); display: grid; place-items: center; flex: 0 0 auto; }
+  .perk .perk-ico svg { width: 20px; height: 20px; }
+  .perk .perk-txt { flex: 1; min-width: 0; }
+  .perk .perk-txt b { display: block; font-weight: 600; font-size: 14.5px; }
+  .perk .perk-txt span { font-size: 12px; opacity: .8; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .perk .chev { opacity: .7; font-size: 18px; }
+  .perk.guest { background: var(--amber-soft); color: var(--ink); }
+  .perk.guest .perk-ico { background: #F3E2B8; color: var(--amber); }
+  .perk.guest .perk-txt span { color: var(--muted); opacity: 1; }
+  /* ===== 我的 ===== */
+  .me-head { display: flex; align-items: center; gap: 14px; }
+  .me-av { width: 52px; height: 52px; border-radius: 50%; background: var(--teal); color: #fff; display: grid; place-items: center; font-size: 20px; font-weight: 600; flex: 0 0 auto; }
+  .me-av.guest { background: #E4E9E7; color: #8A97A0; }
+  .me-av svg { width: 26px; height: 26px; }
+  .me-info { flex: 1; min-width: 0; }
+  .me-info b { display: block; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .me-info span { font-size: 12.5px; color: var(--muted); }
+  .me-info .lvl { color: var(--amber); font-weight: 500; }
+  .btn.sm { height: 36px; font-size: 14px; padding: 0 16px; min-width: 0; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; padding: 12px 8px; }
+  .stats b { display: block; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stats span { font-size: 12px; color: var(--muted); }
+  .menu { padding: 4px 16px; }
+  .mi { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 13px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .mi:first-child { border-top: 0; }
+  .mi .mico { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--teal); background: var(--teal-soft); flex: 0 0 auto; }
+  .mi .mico svg { width: 18px; height: 18px; }
+  .mi .mtxt { flex: 1; }
+  .mi .cnt { font-size: 12px; color: var(--muted); }
+  .mi .chev { color: var(--muted); font-size: 18px; }
+  .logout { width: 100%; text-align: center; color: var(--muted); font-size: 14px; padding: 12px; }
+  /* ===== 专属权益 ===== */
+  .vip { background: var(--teal); color: #fff; }
+  .vip .lv { font-size: 20px; font-weight: 600; }
+  .vip .sub { font-size: 12.5px; opacity: .8; margin-top: 2px; }
+  .vip .bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.2); margin-top: 14px; overflow: hidden; }
+  .vip .bar i { display: block; height: 100%; background: #fff; border-radius: 3px; }
+  .vip .prog { font-size: 12px; opacity: .85; margin-top: 6px; display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+  .vip.guest { background: var(--card); color: var(--ink); border: 1.5px dashed var(--line); display: flex; align-items: center; gap: 12px; }
+  .vip.guest .lv { font-size: 16px; }
+  .vip.guest .sub { color: var(--muted); opacity: 1; }
+  .vip.guest .btn { margin-left: auto; }
+  .bf { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); }
+  .bf:first-child { border-top: 0; padding-top: 0; }
+  .bf .bico { width: 36px; height: 36px; border-radius: 10px; background: var(--teal-soft); color: var(--teal); display: grid; place-items: center; flex: 0 0 auto; }
+  .bf .bico svg { width: 20px; height: 20px; }
+  .bf .bt { flex: 1; min-width: 0; }
+  .bf .bt b { display: block; font-weight: 600; font-size: 14.5px; }
+  .bf .bt span { font-size: 12.5px; color: var(--muted); }
+  .bf .st { margin-top: 2px; }
+  .st.off { background: var(--paper); color: var(--muted); }
+  /* ===== 客户服务 ===== */
+  .svc-note { font-size: 12.5px; color: var(--muted); margin-top: 8px; text-align: center; }
+  .faq details { border-top: 1px solid var(--line); }
+  .faq details:first-of-type { border-top: 0; }
+  .faq summary { cursor: pointer; padding: 12px 0; font-size: 14.5px; font-weight: 500; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; color: var(--muted); font-size: 18px; flex: 0 0 auto; }
+  .faq details[open] summary::after { content: '–'; }
+  .faq p { margin: 0 0 12px; font-size: 13.5px; color: var(--muted); }
+  .contact { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; font-size: 14px; border-top: 1px solid var(--line); }
+  .contact:first-child { border-top: 0; }
+  .contact span:first-child { color: var(--muted); flex: 0 0 auto; }
+  .contact span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* 充值协议 */
+  .agmt-head { margin-bottom: 4px; }
+  .agmt-head h2 { font-size: 17px; font-weight: 700; margin: 0 0 8px; line-height: 1.4; }
+  .agmt-meta { font-size: 12px; color: var(--muted); line-height: 1.8; }
+  .agmt-intro { font-size: 12.5px; color: var(--ink); line-height: 1.75; background: var(--amber-soft); border-radius: var(--r-lg); padding: 12px 14px; margin: 12px 0 4px; }
+  .agmt-sec { padding: 14px 0; border-top: 1px solid var(--line); }
+  .agmt-sec:first-of-type { border-top: 0; }
+  .agmt-sec h4 { font-size: 14px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
+  .agmt-sec p { font-size: 12.5px; color: var(--muted); line-height: 1.75; margin: 0 0 6px; }
+  .agmt-sec p:last-child { margin-bottom: 0; }
+  .agmt-sec p b { color: var(--ink); font-weight: 500; }
+  /* ===== 在线客服 ===== */
+  .sheet.chat { padding: 0; height: 74%; display: flex; flex-direction: column; overflow: hidden; }
+  .chat .hd { padding: 16px 20px 10px; margin: 0; border-bottom: 1px solid var(--line); }
+  .chat .hd small { font-weight: 400; color: var(--green); font-size: 12px; margin-left: 8px; }
+  .msgs { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; background: var(--paper); }
+  .msg { max-width: 80%; padding: 9px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; }
+  .msg.bot { background: var(--card); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.me { background: var(--teal); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 16px; background: var(--paper); }
+  .chips button { font-size: 12.5px; padding: 5px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
+  .chat-in { display: flex; gap: 8px; padding: 10px 16px 24px; border-top: 1px solid var(--line); background: var(--card); }
+  .chat-in input { flex: 1; border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; font-size: 14px; min-width: 0; }
+  .chat-in button { background: var(--teal); color: #fff; border-radius: 999px; padding: 0 16px; font-weight: 600; }
+  /* ===== 登录 ===== */
+  .fld { margin-bottom: 12px; }
+  .fld label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+  .fld .in { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 0 12px; }
+  .fld .in:focus-within { border-color: var(--teal); }
+  .fld .in.bad { border-color: var(--red); }
+  .fld input { flex: 1; border: 0; padding: 11px 0; font-size: 16px; min-width: 0; background: transparent; font-variant-numeric: tabular-nums; }
+  .fld .in .cc { color: var(--muted); font-weight: 500; }
+  .fld .in button { color: var(--teal); font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .fld .in button[disabled] { color: var(--muted); cursor: default; }
+  .fld .err { font-size: 12px; color: var(--red); margin-top: 4px; min-height: 16px; }
+  .alt { text-align: center; font-size: 13px; color: var(--muted); margin-top: 14px; }
+  .alt button { color: var(--teal); font-weight: 500; }
+  .sheet .fine-s { font-size: 12px; color: var(--muted); margin-top: 12px; text-align: center; }
+  .sheet .fine-s a { color: var(--teal); text-decoration: none; }
+  @media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .spinner { animation-duration: 2s; } * { transition: none !important; } }
+  @media (max-width: 1100px) {
+    .stage { grid-template-columns: 1fr; justify-items: center; gap: 24px; }
+    .intro, .console { justify-self: center; width: min(100%, 390px); max-width: none; }
+    .intro .flow { display: none; }
+  }
+  @media (max-width: 480px) {
+    .stage { padding: 0; }
+    .intro, .console { display: none; }
+    .phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; padding: 0; box-shadow: none; }
+    .screen { border-radius: 0; }
+    .statusbar .notch { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <aside class="intro">
+    <h1>全球话费充值<br>产品原型</h1>
+    <p>面向手机端的跨境话费充值流程，覆盖全球 <b id="stat-c"></b> 个国家和地区、<b id="stat-o"></b> 家运营商。先选国家或地区，再输入号码、选运营商，面额按当地币种展示并折算成人民币付款。</p>
+    <p>本页可直接点击操作，右侧可切换不同业务场景。</p>
+    <ul class="flow" id="flow">
+      <li data-step="country">选择国家或地区</li>
+      <li data-step="input">输入手机号</li>
+      <li data-step="operator">选择运营商</li>
+      <li data-step="amount">选择充值面额</li>
+      <li data-step="pay">确认订单并付款</li>
+      <li data-step="result">到账结果</li>
+      <li data-step="orders">订单记录</li>
+    </ul>
+  </aside>
+
+  <div class="phone">
+    <div class="screen">
+      <div class="statusbar"><span id="clock">9:41</span><span class="notch"></span><span>5G ▮▮▮</span></div>
+
+      <!-- ===== 首页 ===== -->
+      <section class="view on" id="v-home">
+        <div class="topbar"><span>话费充值</span><span class="right"><button class="iconbtn" id="home-service" type="button" aria-label="客户服务"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13a8 8 0 0 1 16 0"/><path d="M4 13v4a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2zM20 13v4a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"/><path d="M12 21h4"/></svg></button><button id="home-right" type="button">充值记录</button></span></div>
+        <div class="pad">
+          <div class="card">
+            <button class="country-row" id="country-btn" type="button">
+              <span class="flag" id="c-flag"></span>
+              <span class="nm"><b id="c-name"></b><span id="c-sub"></span></span>
+              <span class="chev">›</span>
+            </button>
+            <div class="lbl"><span>充值号码</span><button type="button" id="use-mine">为本机充值</button></div>
+            <div class="numwrap" id="numwrap">
+              <span class="cc" id="c-code"></span>
+              <input class="numinput" id="phone" type="tel" inputmode="numeric" placeholder="请输入手机号" autocomplete="off" aria-label="充值号码">
+              <button class="clear" id="clear" type="button" aria-label="清空">✕</button>
+            </div>
+            <div class="numhint" id="numhint"></div>
+          </div>
+
+          <div class="card">
+            <div class="sec-h"><h3>运营商</h3><span id="op-sub"></span></div>
+            <div class="dd" id="op-dd">
+              <button class="dd-trigger" id="op-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="op-list"></button>
+              <ul class="dd-list" id="op-list" role="listbox" aria-label="运营商"></ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="sec-h"><h3>充值金额</h3><span id="amt-sub"></span></div>
+            <div class="grid" id="grid"></div>
+            <div class="custom-box" id="custom-box">
+              <input id="custom-in" type="number" inputmode="decimal" placeholder="输入金额" aria-label="自定义金额">
+              <span class="cur" id="custom-cur"></span>
+              <span class="cny" id="custom-cny"></span>
+            </div>
+            <div class="note arrive" id="arrive"></div>
+          </div>
+        </div>
+        <div class="pad">
+          <button class="card perk" id="perk-strip" type="button"><span class="perk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><span class="perk-txt"><b id="perk-title"></b><span id="perk-sub"></span></span><span class="chev">›</span></button>
+
+          <details class="notice">
+            <summary><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></span>注意事项<span class="chev">›</span></summary>
+            <ol>
+              <li>充值前务必仔细核对手机号码。</li>
+              <li>充值前务必确保手机号码处于正常使用状态（如：手机卡已经正确插入手机内，手机卡有信号等）。</li>
+              <li>充值流量包时务必确保手机号码有足够的话费余额。</li>
+              <li>流量产品在没有特殊标注的情况下都是非漫游流量，即本地流量包，仅允许在相应的国家或地区使用。</li>
+              <li>充值过程中遇到一切问题，请一定及时联系客服。</li>
+            </ol>
+            <p class="notice-warn">未严格按照以上说明操作导致的充值问题，将无法退款。</p>
+          </details>
+        </div>
+        <p class="fine">充值成功后不支持退款，请核对国家、号码与运营商。汇率以下单时为准，实付金额已包含服务费。到账时间以运营商为准，如 24 小时未到账将原路退回。<a href="#" id="agreement-link">查看充值协议</a></p>
+        <div class="paybar">
+          <div class="sum">实付金额<b id="sum-price">¥ 0.00</b></div>
+          <button class="btn" id="go-pay" disabled>立即充值</button>
+        </div>
+      </section>
+
+      <!-- ===== 国家/地区选择 ===== -->
+      <section class="view" id="v-country">
+        <div class="topbar"><button class="back" id="country-back" aria-label="返回">‹</button><span>选择国家或地区</span><span class="sp"></span></div>
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="c-search" type="search" placeholder="搜索国家/地区名称或区号，如 菲律宾、Kenya、+254" aria-label="搜索国家或地区">
+        </div>
+        <div id="c-list"></div>
+      </section>
+
+      <!-- ===== 处理中 ===== -->
+      <section class="view" id="v-processing">
+        <div class="center">
+          <div class="spinner" aria-hidden="true"></div>
+          <h2 id="proc-title">正在提交给运营商</h2>
+          <p id="proc-sub"></p>
+        </div>
+      </section>
+
+      <!-- ===== 结果页 ===== -->
+      <section class="view" id="v-result">
+        <div class="topbar"><span></span><span class="right" id="res-close">完成</span></div>
+        <div class="center" id="res-body"></div>
+      </section>
+
+      <!-- ===== 订单 ===== -->
+      <section class="view" id="v-orders">
+        <div class="topbar"><button class="back" id="orders-back" aria-label="返回">‹</button><span>充值记录</span><span class="sp"></span></div>
+        <div class="pad" id="orders-list"></div>
+      </section>
+
+      <!-- ===== 我的 ===== -->
+      <section class="view" id="v-me">
+        <div class="topbar"><span>我的</span><span class="right"><button class="iconbtn" id="me-service" type="button" aria-label="客户服务"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13a8 8 0 0 1 16 0"/><path d="M4 13v4a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2zM20 13v4a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"/><path d="M12 21h4"/></svg></button></span></div>
+        <div class="pad" id="me-body"></div>
+      </section>
+
+      <!-- ===== 专属权益 ===== -->
+      <section class="view" id="v-benefits">
+        <div class="topbar"><button class="back" id="benefits-back" aria-label="返回">‹</button><span>专属权益</span><span class="sp"></span></div>
+        <div class="pad" id="benefits-body"></div>
+      </section>
+
+      <!-- ===== 客户服务 ===== -->
+      <section class="view" id="v-service">
+        <div class="topbar"><button class="back" id="service-back" aria-label="返回">‹</button><span>客户服务</span><span class="sp"></span></div>
+        <div class="pad">
+          <div class="card">
+            <button class="btn wide" id="svc-chat" type="button">在线客服</button>
+            <div class="svc-note">9:00–24:00 · 平均响应 30 秒 · 会员优先接入</div>
+          </div>
+          <div class="card faq">
+            <div class="sec-h"><h3>常见问题</h3></div>
+            <details><summary>充值多久到账？</summary><p>大部分运营商即时到账，部分运营商需 5–30 分钟。到账后当地运营商会发送短信，超过 24 小时未到账将自动原路退款。</p></details>
+            <details><summary>充错号码怎么办？</summary><p>充值成功后无法撤回，请在付款前核对国家、号码与运营商。若订单仍在处理中，请立即联系在线客服并提供订单号，我们会尝试拦截。</p></details>
+            <details><summary>退款多久到账？</summary><p>充值失败的订单会在 1–3 个工作日按原支付方式退回，可在「充值记录」中查看退款进度。</p></details>
+            <details><summary>汇率和服务费怎么算？</summary><p>实付金额按下单时的参考汇率计算，跨境充值含 3% 服务费，会员享 98 折。付款后金额不再变动。</p></details>
+            <details><summary>可以开发票吗？</summary><p>支持开具电子发票，在订单详情页申请，1 个工作日内发送到邮箱。</p></details>
+          </div>
+          <div class="card">
+            <div class="sec-h"><h3>其他联系方式</h3></div>
+            <div class="contact"><span>客服热线</span><span>400-800-0000（演示）</span></div>
+            <div class="contact"><span>邮箱</span><span>support@example.com</span></div>
+            <div class="contact"><span>服务时间</span><span>每天 9:00–24:00</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 充值协议 ===== -->
+      <section class="view" id="v-agreement">
+        <div class="topbar"><button class="back" id="agreement-back" aria-label="返回">‹</button><span>充值协议</span><span class="sp"></span></div>
+        <div class="pad">
+          <div class="agmt-head">
+            <h2>XYZ有限责任公司话费充值服务协议</h2>
+            <div class="agmt-meta">生效日期：2026 年 9 月 7 日　|　最近更新：2026 年 9 月 7 日<br>服务提供方：XYZ有限责任公司（以下简称"本平台"或"我们"）</div>
+          </div>
+          <div class="agmt-intro">本协议是您（以下简称"用户"或"您"）与 XYZ有限责任公司 就使用本平台提供的话费、流量等电信增值充值服务（以下简称"本服务"）所订立的具有法律约束力的协议。请您在使用本服务前仔细阅读本协议全部内容，特别是以粗体标注的免除或限制本平台责任的条款。您勾选同意、提交订单或以任何方式使用本服务，均视为您已充分阅读、理解并接受本协议的全部内容。</div>
+
+          <div class="agmt-sec">
+            <h4>一、定义</h4>
+            <p>1.1 "本服务"：指本平台向用户提供的，用于向境内外指定手机号码充值话费、流量或其他电信增值产品的信息中介及技术撮合服务。</p>
+            <p>1.2 "充值账号"：指用户在下单时填写的、用于接收充值的手机号码。</p>
+            <p>1.3 "运营商"：指为充值账号提供电信服务的境内外电信运营商或其授权渠道商。</p>
+            <p>1.4 "订单"：指用户通过本服务提交的单次充值请求。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>二、服务性质与范围</h4>
+            <p>2.1 本平台系电信增值服务的信息撮合与技术服务提供方，通过与境内外电信运营商、持牌支付机构及第三方充值渠道商（以下统称"合作方"）对接，为用户提供话费、流量充值的下单及支付通道服务。</p>
+            <p>2.2 本服务覆盖的国家/地区及运营商范围以本平台客户端实时展示为准，本平台有权根据合作方接入情况调整支持范围，并将尽合理努力提前公示。</p>
+            <p>2.3 <b>除下单页面另有标注外，本平台展示的流量类产品均为当地非漫游流量（本地流量包），仅可在充值账号归属的国家或地区境内使用，不支持跨境漫游场景使用，用户应自行核实产品适用范围后再行下单。</b></p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>三、下单与用户核对义务</h4>
+            <p>3.1 用户应保证在下单时提供真实、准确、完整的充值账号信息，包括但不限于国家/地区、区号、手机号码及运营商。</p>
+            <p>3.2 <b>用户确认，在提交订单前已完成以下核对：（一）充值账号无误；（二）该号码处于正常使用状态，包括手机卡已正确插入设备、信号正常、未挂失或停机销号；（三）若充值流量包类产品，充值账号已具备足够的话费余额以支持流量包的开通或叠加。</b></p>
+            <p>3.3 订单一经提交并支付成功即进入处理流程，本平台或合作方将尽快向运营商发起充值请求，订单原则上不支持撤销或变更充值账号。</p>
+            <p>3.4 <b>用户在充值下单及处理过程中遇到任何问题，应第一时间通过本平台在线客服联系我们；未及时联系客服导致损失扩大的部分，本平台不承担责任。</b></p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>四、价格、汇率与会员优惠</h4>
+            <p>4.1 本服务展示的充值面额以当地货币计价，并按下单时的参考汇率折算为人民币显示实付金额；该参考汇率仅供计价使用，可能与银行、外汇管理机构公布的牌价存在差异。</p>
+            <p>4.2 实付金额已包含本平台就撮合、结算所收取的服务费（如有），具体以下单页面展示为准，支付成功后金额不再变更。</p>
+            <p>4.3 已注册并登录本平台账户的会员用户，可就本平台"专属权益"页面公示的适用范围内的跨境充值订单享受相应会员优惠价格，本平台保留调整会员权益内容、优惠比例及适用范围的权利，调整前已生效的订单不受影响。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>五、支付</h4>
+            <p>5.1 用户应通过本平台提供的合法支付方式完成付款，支付信息由持牌支付机构处理，本平台不存储用户完整的支付账户信息。</p>
+            <p>5.2 因用户支付账户余额不足、被冻结、超额限额或其他非本平台原因导致支付失败或延迟的，本平台不承担责任。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>六、到账时间</h4>
+            <p>6.1 充值到账时间以运营商实际处理结果为准，多数订单为实时到账，部分国家/地区或运营商可能需要 5 至 30 分钟不等；如遇运营商系统维护、通道拥堵等情形，到账时间可能进一步延长。</p>
+            <p>6.2 自支付成功起 24 小时内仍未到账的，视为充值失败，本平台将按原支付路径为用户办理退款，退款一般于 1 至 3 个工作日内到账，具体以支付渠道处理时效为准。</p>
+            <p>6.3 用户可在"充值记录"中查询订单状态；如对到账结果存疑，应在充值完成后 7 日内联系客服核实，逾期本平台将以运营商反馈的到账结果为准。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>七、退款政策</h4>
+            <p>7.1 订单一经充值成功即视为服务已完成交付。本服务在性质上属于即时消费的虚拟商品/服务，<b>不适用无理由退款</b>。</p>
+            <p>7.2 出现以下情形之一的，本平台将为用户办理退款：（一）因本平台或合作方原因导致充值失败的；（二）超过本协议第 6.2 条约定时限仍未到账的；（三）运营商渠道维护或故障导致订单无法处理，且未能在合理时间内恢复的。</p>
+            <p>7.3 <b>因下列情形导致的充值失败或损失，本平台不承担退款或赔偿责任：（一）用户提供的充值账号错误、不完整或填写有误；（二）充值账号未插卡、停机、销号、无信号或处于其他非正常使用状态；（三）充值流量包时充值账号话费余额不足导致流量包无法开通；（四）用户超出流量产品适用的国家/地区范围使用（如将本地流量包用于漫游场景）；（五）用户在充值过程中遇到问题未及时联系客服，导致损失扩大的部分。</b></p>
+            <p>7.4 用户理解并同意，第 7.3 条所列情形均属于用户未按本平台在下单页面"注意事项"中已作显著提示的要求操作所致，用户提交订单即视为已阅读、知悉并接受相关风险及后果。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>八、用户的承诺与禁止行为</h4>
+            <p>8.1 用户承诺不将本服务用于任何违反法律法规的目的，包括但不限于洗钱、电信网络诈骗、为他人代充值用于非法用途等。</p>
+            <p>8.2 用户不得利用技术手段恶意刷单、虚假交易套取会员优惠或补贴，或以其他方式干扰本平台系统的正常运行。</p>
+            <p>8.3 <b>用户违反本条约定的，本平台有权拒绝提供服务、取消订单、冻结账户，并保留依法追究其法律责任的权利；因此产生的一切后果及第三方损失，由用户自行承担。</b></p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>九、知识产权</h4>
+            <p>9.1 本平台的软件、界面设计、商标、文字及其他内容的知识产权归本平台或相关权利人所有，未经许可，用户不得复制、传播、修改或用于商业用途。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十、个人信息保护</h4>
+            <p>10.1 本平台按照适用的个人信息保护法律法规，收集、使用、存储用户为完成充值及支付所必需的信息（如充值账号、支付信息、订单记录等），具体处理规则以本平台《隐私政策》为准。</p>
+            <p>10.2 本平台采取合理的技术与管理措施保护用户信息安全；因不可抗力、黑客攻击等非本平台过错导致的信息泄露，本平台在法律允许范围内免责。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十一、服务的变更、中止与终止</h4>
+            <p>11.1 因运营商政策调整、合作关系变化、系统维护升级或其他合理事由，本平台有权对本服务的全部或部分内容进行变更、中止或终止，并将尽合理努力提前公告或提示。</p>
+            <p>11.2 用户违反本协议的，本平台有权在不事先通知的情况下限制或终止向该用户提供服务。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十二、不可抗力</h4>
+            <p>12.1 因自然灾害、政府行为、法律法规变更、电信网络故障、公共基础设施中断等不可归责于本平台的不可抗力事件，导致本服务全部或部分不能履行的，本平台不承担违约责任，但应在合理期限内通知用户并尽力减少损失。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十三、免责声明</h4>
+            <p>13.1 本服务依赖境内外电信运营商及第三方渠道的系统与网络，<b>本平台不对因前述第三方原因导致的服务中断、延迟或差错承担赔偿责任</b>，但将协助用户与相关方沟通协调。</p>
+            <p>13.2 <b>在法律允许的最大范围内，本平台对用户因使用或无法使用本服务而产生的间接损失、利润损失或数据损失不承担责任。</b></p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十四、协议的修改</h4>
+            <p>14.1 本平台有权根据业务发展、法律法规变化等需要修改本协议，修改后的协议将在本平台公示并注明更新日期；用户在协议更新后继续使用本服务的，视为接受修改后的协议内容。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十五、争议解决与法律适用</h4>
+            <p>15.1 本协议的订立、效力、解释及争议解决均适用中华人民共和国大陆地区法律（不含冲突法规范）。</p>
+            <p>15.2 因本协议引起的或与本协议有关的任何争议，双方应友好协商解决；协商不成的，任何一方均有权向本平台注册地有管辖权的人民法院提起诉讼。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十六、联系我们</h4>
+            <p>如您对本协议或本服务有任何疑问，可通过以下方式联系我们：</p>
+            <p>公司名称：XYZ有限责任公司</p>
+            <p>客服热线：400-800-0000（演示）</p>
+            <p>客服邮箱：support@example.com</p>
+            <p>服务时间：每天 9:00–24:00</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 用户服务协议 ===== -->
+      <section class="view" id="v-terms">
+        <div class="topbar"><button class="back" id="terms-back" aria-label="返回">‹</button><span>用户服务协议</span><span class="sp"></span></div>
+        <div class="pad">
+          <div class="agmt-head">
+            <h2>XYZ有限责任公司用户服务协议</h2>
+            <div class="agmt-meta">生效日期：2026 年 9 月 7 日　|　最近更新：2026 年 9 月 7 日<br>服务提供方：XYZ有限责任公司（以下简称"本平台"）</div>
+          </div>
+          <div class="agmt-intro">欢迎您使用 XYZ有限责任公司提供的话费充值相关产品与服务（以下统称"本服务"）。本协议是您与本平台之间关于注册、登录及使用本平台账户与相关功能所订立的协议。若您使用具体的充值交易服务，还应遵守《充值协议》及本平台不时发布的其他专项规则；专项规则与本协议不一致的，以专项规则为准。</div>
+
+          <div class="agmt-sec">
+            <h4>一、协议的接受</h4>
+            <p>1.1 您通过手机号码验证码等方式完成注册或登录，或以其他方式使用本平台服务，即视为您已阅读、理解并同意接受本协议的全部内容。</p>
+            <p>1.2 若您不同意本协议的任何内容，应立即停止使用本服务。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>二、账户注册与管理</h4>
+            <p>2.1 您应使用真实、本人有权使用的手机号码进行注册，并对注册信息的真实性、合法性、有效性负责。</p>
+            <p>2.2 账户仅限本人使用，不得转让、出借、出售或以其他方式许可他人使用；因账户转让、出借导致的损失由账户所有人自行承担。</p>
+            <p>2.3 <b>您应妥善保管账户及验证码等身份验证信息，因您保管不善导致的账户被盗用、资金损失等后果，由您自行承担，本平台在法律允许范围内不承担赔偿责任</b>，但将协助您采取必要的补救措施。</p>
+            <p>2.4 您有权申请注销账户；账户注销后，本平台将按照《隐私政策》及适用法律法规的规定处理您的相关信息。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>三、用户行为规范</h4>
+            <p>3.1 您在使用本服务过程中应遵守中华人民共和国法律法规及公序良俗，不得从事以下行为：（一）冒用他人身份或虚构信息注册、认证；（二）利用本服务从事洗钱、电信网络诈骗、非法集资等违法犯罪活动；（三）恶意注册、批量注册账户，套取本平台优惠或权益；（四）利用外挂、爬虫等技术手段干扰本平台系统正常运行或非法获取数据；（五）发布、传输违法、侵权或不良信息。</p>
+            <p>3.2 <b>您违反本条约定的，本平台有权视情节采取警示、限制功能、暂停或终止服务、注销账户等措施，并保留依法追究法律责任的权利。</b></p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>四、会员权益</h4>
+            <p>4.1 本平台可能根据用户的注册时长、充值金额、积分等因素设定不同的会员等级，并向会员提供差异化的价格优惠、专属客服等权益，具体规则以本平台"专属权益"页面公示为准。</p>
+            <p>4.2 本平台保留调整会员等级规则、权益内容及积分获取/使用规则的权利，调整前已产生的权益不受影响。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>五、服务的提供、变更与中断</h4>
+            <p>5.1 本平台将尽合理商业努力保障服务的稳定运行，但不保证服务不会中断，也不保证服务的及时性、安全性、准确性完全满足您的要求。</p>
+            <p>5.2 因系统维护、升级、电信运营商或第三方合作方原因，或不可抗力等情形导致服务中断或调整的，本平台将尽合理努力提前通知；<b>若因前述原因给您造成损失的，本平台在法律允许范围内不承担赔偿责任。</b></p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>六、知识产权</h4>
+            <p>6.1 本平台提供的软件、网站、客户端及其中包含的文字、图片、界面设计、商标等知识产权归本平台或相关权利人所有，受法律保护。</p>
+            <p>6.2 未经本平台书面许可，任何人不得以任何方式复制、修改、传播、汇编或用于任何商业目的。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>七、免责与责任限制</h4>
+            <p>7.1 本服务的具体交易内容（如充值下单、退款等）以《充值协议》及订单页面展示内容为准；因交易本身产生的权利义务，适用该专项协议的约定。</p>
+            <p>7.2 <b>在法律允许的最大范围内，本平台对因用户违反本协议、第三方原因或不可抗力导致的损失不承担赔偿责任。</b></p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>八、协议的终止</h4>
+            <p>8.1 您可以随时通过注销账户的方式终止本协议；本平台在您严重违反本协议约定的情况下，有权单方终止向您提供服务。</p>
+            <p>8.2 协议终止后，本平台仍可就您在协议存续期间的行为依法追究相应责任。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>九、协议的修改</h4>
+            <p>9.1 本平台有权根据法律法规变化及业务发展需要修改本协议，修改后的协议将在本平台公示并注明更新日期；若您在修改后继续使用本服务，即视为您接受修改后的协议。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十、法律适用与争议解决</h4>
+            <p>10.1 本协议的订立、效力、解释及争议解决均适用中华人民共和国大陆地区法律。</p>
+            <p>10.2 因本协议引起的或与本协议有关的任何争议，双方应友好协商解决；协商不成的，任何一方均有权向本平台注册地有管辖权的人民法院提起诉讼。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>十一、联系我们</h4>
+            <p>公司名称：XYZ有限责任公司</p>
+            <p>客服热线：400-800-0000（演示）</p>
+            <p>客服邮箱：support@example.com</p>
+            <p>服务时间：每天 9:00–24:00</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 隐私政策 ===== -->
+      <section class="view" id="v-privacy">
+        <div class="topbar"><button class="back" id="privacy-back" aria-label="返回">‹</button><span>隐私政策</span><span class="sp"></span></div>
+        <div class="pad">
+          <div class="agmt-head">
+            <h2>XYZ有限责任公司隐私政策</h2>
+            <div class="agmt-meta">生效日期：2026 年 9 月 7 日　|　最近更新：2026 年 9 月 7 日<br>信息处理方：XYZ有限责任公司（以下简称"我们"）</div>
+          </div>
+          <div class="agmt-intro">XYZ有限责任公司深知个人信息对您的重要性，将按照法律法规的要求，采取相应的安全保护措施，尽力保护您的个人信息安全可控。本政策适用于您通过本平台使用的话费充值相关服务，请您在使用前仔细阅读并了解本《隐私政策》。</div>
+
+          <div class="agmt-sec">
+            <h4>一、我们收集的信息</h4>
+            <p>1.1 您主动提供的信息：包括注册登录时提供的手机号码、验证码；下单充值时填写的充值账号（收款方手机号码）、国家/地区、运营商信息；申请开具发票时提供的发票抬头及邮箱。</p>
+            <p>1.2 您使用服务过程中产生的信息：包括订单记录（金额、时间、状态）、支付记录（不含完整支付账户信息，支付信息由持牌支付机构处理）、客服沟通记录、设备信息（设备型号、操作系统、唯一设备标识符）及日志信息（IP 地址、访问时间、访问页面）。</p>
+            <p>1.3 我们不会收集与提供本服务无直接关联的个人信息，也不会收集敏感个人信息，除非取得您的单独同意或法律另有规定。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>二、我们如何使用信息</h4>
+            <p>2.1 用于完成充值下单、支付、到账查询、退款处理等核心业务功能。</p>
+            <p>2.2 用于身份验证、账户安全保护、风险防控及反欺诈。</p>
+            <p>2.3 用于向您提供客户服务、处理您的咨询与投诉。</p>
+            <p>2.4 经您同意后，用于向您推送优惠活动、会员权益等信息，您可随时通过设置或联系客服取消接收。</p>
+            <p>2.5 用于改进产品与服务质量的统计分析，相关分析结果不会与您的身份信息直接关联。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>三、信息的共享与披露</h4>
+            <p>3.1 为完成充值服务，我们会将必要的充值账号、金额等信息提供给相关电信运营商及持牌支付机构，仅限于完成交易所必需的范围。</p>
+            <p>3.2 <b>除前款情形外，我们不会向任何第三方出售、出租或以其他方式提供您的个人信息</b>，法律法规另有规定，或取得您的单独同意的除外。</p>
+            <p>3.3 若因政府监管要求、司法机关调取或为保护本平台及用户合法权益（如打击欺诈）需要披露您的信息的，我们将在法律允许的范围内进行披露。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>四、信息的存储与保护</h4>
+            <p>4.1 我们仅在实现本政策所述目的所必需的期限内保存您的个人信息，法律法规另有规定的除外；超出保存期限后，我们将对相关信息进行删除或匿名化处理。</p>
+            <p>4.2 我们采取加密传输、访问权限控制、安全审计等合理的技术与管理措施保护您的信息安全，但请您理解，由于技术的限制及可能存在的各种恶意手段，<b>我们无法保证信息百分之百的安全</b>。</p>
+            <p>4.3 若发生个人信息安全事件，我们将按照法律法规要求及时告知您事件的基本情况、可能造成的影响及我们已采取或将要采取的处置措施。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>五、您的权利</h4>
+            <p>5.1 您有权查询、更正您在本平台的注册信息及订单记录，可通过账户设置或联系客服办理。</p>
+            <p>5.2 您有权申请删除您的个人信息或注销账户，但法律法规另有规定，或您与本平台之间存在未了结的订单、纠纷的除外。</p>
+            <p>5.3 您有权通过客服渠道撤回您此前给予的相关同意（如营销信息推送同意），撤回不影响撤回前基于该同意已进行的处理行为的效力。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>六、未成年人保护</h4>
+            <p>6.1 本服务主要面向具备完全民事行为能力的成年人提供。若您是未成年人，请在监护人的陪同和指导下使用本服务并阅读本政策。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>七、Cookie 及同类技术的使用</h4>
+            <p>7.1 我们可能使用 Cookie 及同类技术收集您的设备信息、使用偏好等，以实现记住登录状态、优化产品体验等目的；您可以通过设备或浏览器设置管理或清除相关数据，但这可能影响部分功能的正常使用。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>八、本政策的更新</h4>
+            <p>8.1 我们可能适时修订本政策内容，修订后的政策将在本平台公示并注明更新日期；重大变更时，我们将以显著方式（如页面提示、消息推送）通知您。</p>
+          </div>
+
+          <div class="agmt-sec">
+            <h4>九、联系我们</h4>
+            <p>如您对本政策或您的个人信息处理事宜有任何疑问、意见或投诉，可通过以下方式联系我们：</p>
+            <p>公司名称：XYZ有限责任公司</p>
+            <p>客服热线：400-800-0000（演示）</p>
+            <p>客服邮箱：support@example.com</p>
+            <p>服务时间：每天 9:00–24:00</p>
+          </div>
+        </div>
+      </section>
+
+      <nav class="tabs">
+        <button class="on" data-tab="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>充值
+        </button>
+        <button data-tab="orders">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>订单
+        </button>
+        <button data-tab="me">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>我的
+        </button>
+      </nav>
+
+      <!-- 支付面板 -->
+      <div class="sheet-mask" id="sheet">
+        <div class="sheet" role="dialog" aria-label="确认充值">
+          <div class="hd"><span>确认充值</span><button type="button" id="sheet-close" aria-label="关闭">×</button></div>
+          <div class="row"><span>国家/地区</span><span id="s-country"></span></div>
+          <div class="row"><span>充值号码</span><span id="s-phone"></span></div>
+          <div class="row"><span>运营商</span><span id="s-op"></span></div>
+          <div class="row"><span>充值面额</span><span id="s-face"></span></div>
+          <div class="row"><span>参考汇率</span><span id="s-rate"></span></div>
+          <div class="row"><span id="s-fee-lbl">服务费</span><span id="s-fee"></span></div>
+          <div class="row" id="s-member-row" style="display:none"><span>会员优惠</span><span id="s-member" style="color:var(--red)"></span></div>
+          <div class="row total"><span>实付</span><span id="s-total"></span></div>
+          <div class="paylist">
+            <label><input type="radio" name="pm" value="微信支付" checked><span class="ico c-wx">微</span>微信支付</label>
+            <label><input type="radio" name="pm" value="支付宝"><span class="ico c-ali">支</span>支付宝</label>
+            <label><input type="radio" name="pm" value="账户余额"><span class="ico c-wal">余</span>账户余额<span class="bal" id="bal">余额 ¥ 36.20</span></label>
+          </div>
+          <button class="btn wide" id="confirm-pay">确认付款</button>
+        </div>
+      </div>
+
+      <!-- 登录 -->
+      <div class="sheet-mask" id="login-sheet">
+        <div class="sheet" role="dialog" aria-label="登录">
+          <div class="hd"><span>登录 / 注册</span><button type="button" id="login-close" aria-label="关闭">×</button></div>
+          <div class="fld"><label for="login-phone">手机号</label><div class="in" id="login-phone-wrap"><span class="cc">+86</span><input id="login-phone" type="tel" inputmode="numeric" maxlength="11" placeholder="请输入手机号" autocomplete="off"></div></div>
+          <div class="fld"><label for="login-code">验证码</label><div class="in" id="login-code-wrap"><input id="login-code" type="text" inputmode="numeric" maxlength="6" placeholder="6 位验证码" autocomplete="off"><button type="button" id="send-code">获取验证码</button></div><div class="err" id="login-err"></div></div>
+          <button class="btn wide" id="login-submit" type="button">登录</button>
+          <div class="alt">未注册的手机号将自动注册 · <button type="button" id="login-quick">本机号码一键登录</button></div>
+          <div class="fine-s">登录即表示同意<a href="#" id="login-terms-link">《用户协议》</a>和<a href="#" id="login-privacy-link">《隐私政策》</a></div>
+        </div>
+      </div>
+
+      <!-- 在线客服 -->
+      <div class="sheet-mask" id="chat-sheet">
+        <div class="sheet chat" role="dialog" aria-label="在线客服">
+          <div class="hd"><span>在线客服<small>● 在线</small></span><button type="button" id="chat-close" aria-label="关闭">×</button></div>
+          <div class="msgs" id="msgs"></div>
+          <div class="chips" id="chips"></div>
+          <form class="chat-in" id="chat-form"><input id="chat-in" type="text" placeholder="输入问题…" autocomplete="off" aria-label="输入消息"><button type="submit">发送</button></form>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <aside class="console">
+    <h2>演示控制台</h2>
+    <p class="hint">切换下方场景后再点「立即充值」，可以看到不同的到账与异常处理。</p>
+    <div class="scenario" id="scenario">
+      <label><input type="radio" name="sc" value="ok" checked><span>正常到账<small>付款后运营商即时回执成功</small></span></label>
+      <label><input type="radio" name="sc" value="slow"><span>到账延迟<small>运营商排队，订单进入处理中，30 秒后自动到账</small></span></label>
+      <label><input type="radio" name="sc" value="fail"><span>充值失败<small>号码状态异常，款项原路退回</small></span></label>
+      <label><input type="radio" name="sc" value="maint"><span>通道维护<small>当前所选运营商通道暂停，禁用其面额</small></span></label>
+    </div>
+    <div class="log">
+      <h2>事件日志</h2>
+      <ol id="log"><li class="empty">还没有操作</li></ol>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  // ---------- 全球数据（演示用；汇率为近似值，运营商为各市场主要品牌） ----------
+  // 每个货币：1 美元约合多少该货币
+  var FX = {
+    CNY: 7.1, HKD: 7.8, MOP: 8.0, TWD: 30, JPY: 145, KRW: 1380, KPW: 900, MNT: 3450, SGD: 1.3, MYR: 4.3, THB: 33, VND: 25500, PHP: 56, IDR: 16300,
+    KHR: 4050, LAK: 21500, MMK: 2100, BND: 1.3, USD: 1, INR: 84, PKR: 280, BDT: 120, LKR: 300, NPR: 135, BTN: 84, MVR: 15.4, AFN: 70,
+    KZT: 500, UZS: 12700, KGS: 87, TJS: 10.7, TMT: 3.5, AED: 3.67, SAR: 3.75, QAR: 3.64, KWD: 0.31, BHD: 0.377, OMR: 0.385, YER: 250,
+    IQD: 1310, IRR: 42000, JOD: 0.71, LBP: 89500, SYP: 13000, ILS: 3.7, TRY: 34, GEL: 2.7, AMD: 390, AZN: 1.7,
+    GBP: 0.78, EUR: 0.92, CHF: 0.88, DKK: 6.9, SEK: 10.5, NOK: 10.8, ISK: 138, PLN: 4.0, CZK: 23.5, HUF: 370, RON: 4.6, BGN: 1.8,
+    RSD: 108, BAM: 1.8, MKD: 57, ALL: 92, UAH: 41, BYN: 3.3, MDL: 18, RUB: 90, GIP: 0.78,
+    EGP: 49, MAD: 10, DZD: 134, TND: 3.1, LYD: 4.85, SDG: 600, SSP: 1300, ETB: 120, ERN: 15, DJF: 178, SOS: 570, KES: 129, UGX: 3700,
+    TZS: 2650, RWF: 1350, BIF: 2900, MZN: 64, MWK: 1735, ZMW: 26, BWP: 13.6, NAD: 18, ZAR: 18, LSL: 18, SZL: 18, AOA: 900, CDF: 2850,
+    XAF: 605, XOF: 605, NGN: 1550, GHS: 15.5, GNF: 8600, SLE: 22.5, LRD: 195, GMD: 70, MRU: 40, CVE: 101, STN: 22.5, MGA: 4600,
+    MUR: 46, SCR: 14, KMF: 453,
+    CAD: 1.37, MXN: 19.5, GTQ: 7.7, BZD: 2, HNL: 25, NIO: 36.8, CRC: 515, PAB: 1, CUP: 24, DOP: 60, HTG: 131, JMD: 157, BSD: 1, BBD: 2,
+    TTD: 6.8, XCD: 2.7, KYD: 0.83, BMD: 1, AWG: 1.79, ANG: 1.79,
+    BRL: 5.6, ARS: 1000, CLP: 940, COP: 4200, PEN: 3.75, VES: 40, BOB: 6.9, PYG: 7700, UYU: 42, GYD: 209, SRD: 34,
+    AUD: 1.53, NZD: 1.68, PGK: 3.95, FJD: 2.25, SBD: 8.4, VUV: 119, WST: 2.8, TOP: 2.35, XPF: 110
+  };
+  var REGIONS = { asia: '亚洲', europe: '欧洲', africa: '非洲', namerica: '北美洲', samerica: '南美洲', oceania: '大洋洲' };
+  var HOT = ['CN', 'HK', 'TW', 'SG', 'MY', 'TH', 'VN', 'PH', 'ID', 'IN', 'JP', 'KR', 'US', 'GB', 'AU', 'AE'];
+  var CN_PRICES = { 10: 9.95, 20: 19.9, 30: 29.8, 50: 49.6, 100: 98.8, 200: 197.5, 300: 296, 500: 493 };
+
+  // 字段：代码, 中文名, 英文名, 区号, 货币, 大洲, 最少位数, 最多位数, 输入时去掉开头0, 首位规则, 运营商[[名称, 号段(可选)], ...]
+  var RAW = [
+    // ===== 亚洲 =====
+    ['CN', '中国大陆', 'China', '86', 'CNY', 'asia', 11, 11, 0, '1[3-9]', [['中国移动', '134,135,136,137,138,139,147,150,151,152,157,158,159,165,172,178,182,183,184,187,188,195,197,198'], ['中国联通', '130,131,132,145,155,156,166,167,171,175,176,185,186,196'], ['中国电信', '133,149,153,173,177,180,181,189,190,191,193,199'], ['中国广电', '192']]],
+    ['HK', '中国香港', 'Hong Kong', '852', 'HKD', 'asia', 8, 8, 0, '[569]', [['csl'], ['3HK'], ['SmarTone'], ['中国移动香港']]],
+    ['MO', '中国澳门', 'Macao', '853', 'MOP', 'asia', 8, 8, 0, '6', [['CTM'], ['3 Macau'], ['中国电信澳门'], ['SmarTone Macau']]],
+    ['TW', '中国台湾', 'Taiwan', '886', 'TWD', 'asia', 9, 9, 1, '9', [['中华电信'], ['台湾大哥大'], ['远传电信']]],
+    ['JP', '日本', 'Japan', '81', 'JPY', 'asia', 10, 10, 1, '[789]0', [['NTT docomo'], ['au'], ['SoftBank'], ['Rakuten Mobile']]],
+    ['KR', '韩国', 'South Korea', '82', 'KRW', 'asia', 9, 10, 1, '1', [['SK Telecom'], ['KT'], ['LG U+']]],
+    ['KP', '朝鲜', 'North Korea', '850', 'KPW', 'asia', 10, 10, 1, '', [['Koryolink'], ['Kangsong Net']]],
+    ['MN', '蒙古', 'Mongolia', '976', 'MNT', 'asia', 8, 8, 0, '', [['Mobicom'], ['Unitel'], ['Skytel'], ['G-Mobile']]],
+    ['SG', '新加坡', 'Singapore', '65', 'SGD', 'asia', 8, 8, 0, '[89]', [['Singtel'], ['StarHub'], ['M1'], ['Simba']]],
+    ['MY', '马来西亚', 'Malaysia', '60', 'MYR', 'asia', 9, 10, 1, '1', [['Maxis / Hotlink', '12,17,142'], ['CelcomDigi', '13,19,148,10,16,11'], ['U Mobile', '18'], ['Yes']]],
+    ['TH', '泰国', 'Thailand', '66', 'THB', 'asia', 9, 9, 1, '[689]', [['AIS'], ['True / dtac'], ['NT Mobile']]],
+    ['VN', '越南', 'Vietnam', '84', 'VND', 'asia', 9, 9, 1, '[3-9]', [['Viettel', '86,96,97,98,32,33,34,35,36,37,38,39'], ['Vinaphone', '88,91,94,81,82,83,84,85'], ['MobiFone', '89,90,93,70,76,77,78,79'], ['Vietnamobile', '92,52,56,58']]],
+    ['PH', '菲律宾', 'Philippines', '63', 'PHP', 'asia', 10, 10, 1, '9', [['Globe / TM', '905,906,915,916,917,926,927,935,936,945,955,956,965,966,975,976,995,996,997'], ['Smart / TNT', '907,908,909,918,919,920,921,928,929,939,946,947,949,951,961,970,981,998,999'], ['DITO', '991,992,993,994']]],
+    ['ID', '印度尼西亚', 'Indonesia', '62', 'IDR', 'asia', 9, 12, 1, '8', [['Telkomsel', '811,812,813,821,822,823,851,852,853'], ['Indosat', '814,815,816,855,856,857,858'], ['XL Axiata', '817,818,819,859,877,878'], ['Tri', '895,896,897,898,899'], ['Smartfren', '881,882,883,884,885,886,887,888,889']]],
+    ['KH', '柬埔寨', 'Cambodia', '855', 'KHR', 'asia', 8, 9, 1, '', [['Cellcard'], ['Smart Axiata'], ['Metfone']]],
+    ['LA', '老挝', 'Laos', '856', 'LAK', 'asia', 9, 10, 1, '', [['Lao Telecom'], ['Unitel'], ['ETL'], ['TPLUS']]],
+    ['MM', '缅甸', 'Myanmar', '95', 'MMK', 'asia', 8, 10, 1, '', [['MPT'], ['ATOM'], ['Ooredoo'], ['Mytel']]],
+    ['BN', '文莱', 'Brunei', '673', 'BND', 'asia', 7, 7, 0, '', [['DST'], ['Progresif'], ['imagine']]],
+    ['TL', '东帝汶', 'Timor-Leste', '670', 'USD', 'asia', 8, 8, 0, '', [['Timor Telecom'], ['Telkomcel'], ['Telemor']]],
+    ['IN', '印度', 'India', '91', 'INR', 'asia', 10, 10, 0, '[6-9]', [['Jio'], ['Airtel'], ['Vi'], ['BSNL']]],
+    ['PK', '巴基斯坦', 'Pakistan', '92', 'PKR', 'asia', 10, 10, 1, '3', [['Jazz'], ['Zong'], ['Telenor Pakistan'], ['Ufone']]],
+    ['BD', '孟加拉国', 'Bangladesh', '880', 'BDT', 'asia', 10, 10, 1, '1', [['Grameenphone'], ['Robi / Airtel'], ['Banglalink'], ['Teletalk']]],
+    ['LK', '斯里兰卡', 'Sri Lanka', '94', 'LKR', 'asia', 9, 9, 1, '7', [['Dialog'], ['SLT-Mobitel'], ['Hutch'], ['Airtel']]],
+    ['NP', '尼泊尔', 'Nepal', '977', 'NPR', 'asia', 10, 10, 0, '9', [['Nepal Telecom'], ['Ncell']]],
+    ['BT', '不丹', 'Bhutan', '975', 'BTN', 'asia', 8, 8, 0, '', [['B-Mobile'], ['TashiCell']]],
+    ['MV', '马尔代夫', 'Maldives', '960', 'MVR', 'asia', 7, 7, 0, '', [['Dhiraagu'], ['Ooredoo']]],
+    ['AF', '阿富汗', 'Afghanistan', '93', 'AFN', 'asia', 9, 9, 1, '7', [['Roshan'], ['Afghan Wireless'], ['Etisalat Afghanistan'], ['Salaam']]],
+    ['KZ', '哈萨克斯坦', 'Kazakhstan', '7', 'KZT', 'asia', 10, 10, 0, '7', [['Beeline'], ['Kcell / Activ'], ['Tele2 / Altel']]],
+    ['UZ', '乌兹别克斯坦', 'Uzbekistan', '998', 'UZS', 'asia', 9, 9, 0, '', [['Ucell'], ['Beeline'], ['Mobiuz'], ['Uzmobile'], ['Humans']]],
+    ['KG', '吉尔吉斯斯坦', 'Kyrgyzstan', '996', 'KGS', 'asia', 9, 9, 1, '', [['Beeline'], ['MegaCom'], ['O!']]],
+    ['TJ', '塔吉克斯坦', 'Tajikistan', '992', 'TJS', 'asia', 9, 9, 0, '', [['Tcell'], ['MegaFon Tajikistan'], ['Babilon-Mobile'], ['ZET-Mobile']]],
+    ['TM', '土库曼斯坦', 'Turkmenistan', '993', 'TMT', 'asia', 8, 8, 1, '', [['TM Cell']]],
+    ['AE', '阿联酋', 'United Arab Emirates', '971', 'AED', 'asia', 9, 9, 1, '5', [['e& (Etisalat)', '50,54,56'], ['du', '52,55,58']]],
+    ['SA', '沙特阿拉伯', 'Saudi Arabia', '966', 'SAR', 'asia', 9, 9, 1, '5', [['stc'], ['Mobily'], ['Zain']]],
+    ['QA', '卡塔尔', 'Qatar', '974', 'QAR', 'asia', 8, 8, 0, '[3567]', [['Ooredoo'], ['Vodafone Qatar']]],
+    ['KW', '科威特', 'Kuwait', '965', 'KWD', 'asia', 8, 8, 0, '[569]', [['Zain'], ['Ooredoo'], ['stc Kuwait']]],
+    ['BH', '巴林', 'Bahrain', '973', 'BHD', 'asia', 8, 8, 0, '3', [['Batelco'], ['Zain'], ['stc Bahrain']]],
+    ['OM', '阿曼', 'Oman', '968', 'OMR', 'asia', 8, 8, 0, '[79]', [['Omantel'], ['Ooredoo'], ['Vodafone Oman']]],
+    ['YE', '也门', 'Yemen', '967', 'YER', 'asia', 9, 9, 1, '7', [['Yemen Mobile'], ['Sabafon'], ['YOU']]],
+    ['IQ', '伊拉克', 'Iraq', '964', 'IQD', 'asia', 10, 10, 1, '7', [['Zain Iraq'], ['Asiacell'], ['Korek']]],
+    ['IR', '伊朗', 'Iran', '98', 'IRR', 'asia', 10, 10, 1, '9', [['MCI (Hamrah-e Aval)'], ['Irancell'], ['Rightel']]],
+    ['JO', '约旦', 'Jordan', '962', 'JOD', 'asia', 9, 9, 1, '7', [['Zain'], ['Orange'], ['Umniah']]],
+    ['LB', '黎巴嫩', 'Lebanon', '961', 'LBP', 'asia', 7, 8, 1, '', [['Alfa'], ['touch']]],
+    ['SY', '叙利亚', 'Syria', '963', 'SYP', 'asia', 9, 9, 1, '9', [['Syriatel'], ['MTN Syria']]],
+    ['IL', '以色列', 'Israel', '972', 'ILS', 'asia', 9, 9, 1, '5', [['Cellcom'], ['Partner'], ['Pelephone'], ['HOT Mobile']]],
+    ['PS', '巴勒斯坦', 'Palestine', '970', 'ILS', 'asia', 9, 9, 1, '5', [['Jawwal'], ['Ooredoo Palestine']]],
+    ['TR', '土耳其', 'Türkiye', '90', 'TRY', 'asia', 10, 10, 1, '5', [['Turkcell'], ['Vodafone'], ['Türk Telekom']]],
+    ['GE', '格鲁吉亚', 'Georgia', '995', 'GEL', 'asia', 9, 9, 0, '5', [['Magti'], ['Silknet'], ['Cellfie']]],
+    ['AM', '亚美尼亚', 'Armenia', '374', 'AMD', 'asia', 8, 8, 1, '', [['Viva-MTS'], ['Ucom'], ['Team Telecom']]],
+    ['AZ', '阿塞拜疆', 'Azerbaijan', '994', 'AZN', 'asia', 9, 9, 1, '[57]', [['Azercell'], ['Bakcell'], ['Nar']]],
+    // ===== 欧洲 =====
+    ['GB', '英国', 'United Kingdom', '44', 'GBP', 'europe', 10, 10, 1, '7', [['EE'], ['O2'], ['Vodafone'], ['Three'], ['giffgaff']]],
+    ['IE', '爱尔兰', 'Ireland', '353', 'EUR', 'europe', 9, 9, 1, '8', [['Vodafone'], ['Three'], ['eir']]],
+    ['FR', '法国', 'France', '33', 'EUR', 'europe', 9, 9, 1, '[67]', [['Orange'], ['SFR'], ['Bouygues Telecom'], ['Free Mobile']]],
+    ['DE', '德国', 'Germany', '49', 'EUR', 'europe', 10, 11, 1, '1', [['Telekom'], ['Vodafone'], ['O2']]],
+    ['IT', '意大利', 'Italy', '39', 'EUR', 'europe', 9, 10, 0, '3', [['TIM'], ['Vodafone'], ['WindTre'], ['Iliad']]],
+    ['ES', '西班牙', 'Spain', '34', 'EUR', 'europe', 9, 9, 0, '[67]', [['Movistar'], ['Vodafone'], ['Orange'], ['Yoigo'], ['Digi']]],
+    ['PT', '葡萄牙', 'Portugal', '351', 'EUR', 'europe', 9, 9, 0, '9', [['MEO'], ['NOS'], ['Vodafone']]],
+    ['NL', '荷兰', 'Netherlands', '31', 'EUR', 'europe', 9, 9, 1, '6', [['KPN'], ['Vodafone'], ['Odido']]],
+    ['BE', '比利时', 'Belgium', '32', 'EUR', 'europe', 9, 9, 1, '4', [['Proximus'], ['Orange'], ['Telenet / BASE']]],
+    ['LU', '卢森堡', 'Luxembourg', '352', 'EUR', 'europe', 9, 9, 0, '6', [['POST'], ['Orange'], ['Tango']]],
+    ['CH', '瑞士', 'Switzerland', '41', 'CHF', 'europe', 9, 9, 1, '7', [['Swisscom'], ['Sunrise'], ['Salt']]],
+    ['AT', '奥地利', 'Austria', '43', 'EUR', 'europe', 10, 13, 1, '6', [['A1'], ['Magenta'], ['Drei']]],
+    ['DK', '丹麦', 'Denmark', '45', 'DKK', 'europe', 8, 8, 0, '', [['TDC / YouSee'], ['Telenor'], ['Telia'], ['3']]],
+    ['SE', '瑞典', 'Sweden', '46', 'SEK', 'europe', 9, 9, 1, '7', [['Telia'], ['Tele2'], ['Telenor'], ['Tre']]],
+    ['NO', '挪威', 'Norway', '47', 'NOK', 'europe', 8, 8, 0, '[49]', [['Telenor'], ['Telia'], ['Ice']]],
+    ['FI', '芬兰', 'Finland', '358', 'EUR', 'europe', 9, 10, 1, '4', [['Elisa'], ['Telia'], ['DNA']]],
+    ['IS', '冰岛', 'Iceland', '354', 'ISK', 'europe', 7, 7, 0, '', [['Síminn'], ['Vodafone'], ['Nova']]],
+    ['PL', '波兰', 'Poland', '48', 'PLN', 'europe', 9, 9, 0, '[4-8]', [['Orange'], ['Play'], ['Plus'], ['T-Mobile']]],
+    ['CZ', '捷克', 'Czechia', '420', 'CZK', 'europe', 9, 9, 0, '[67]', [['O2'], ['T-Mobile'], ['Vodafone']]],
+    ['SK', '斯洛伐克', 'Slovakia', '421', 'EUR', 'europe', 9, 9, 1, '9', [['Orange'], ['Slovak Telekom'], ['O2'], ['4ka']]],
+    ['HU', '匈牙利', 'Hungary', '36', 'HUF', 'europe', 9, 9, 0, '[237]', [['Magyar Telekom'], ['Yettel'], ['One']]],
+    ['RO', '罗马尼亚', 'Romania', '40', 'RON', 'europe', 9, 9, 1, '7', [['Orange'], ['Vodafone'], ['Digi'], ['Telekom']]],
+    ['BG', '保加利亚', 'Bulgaria', '359', 'BGN', 'europe', 9, 9, 1, '[89]', [['A1'], ['Yettel'], ['Vivacom']]],
+    ['GR', '希腊', 'Greece', '30', 'EUR', 'europe', 10, 10, 0, '69', [['Cosmote'], ['Vodafone'], ['Nova']]],
+    ['CY', '塞浦路斯', 'Cyprus', '357', 'EUR', 'europe', 8, 8, 0, '9', [['Cyta'], ['Epic'], ['Primetel']]],
+    ['MT', '马耳他', 'Malta', '356', 'EUR', 'europe', 8, 8, 0, '[79]', [['GO'], ['Epic'], ['Melita']]],
+    ['HR', '克罗地亚', 'Croatia', '385', 'EUR', 'europe', 8, 9, 1, '9', [['Hrvatski Telekom'], ['A1'], ['Telemach']]],
+    ['SI', '斯洛文尼亚', 'Slovenia', '386', 'EUR', 'europe', 8, 8, 1, '[3-7]', [['Telekom Slovenije'], ['A1'], ['Telemach']]],
+    ['RS', '塞尔维亚', 'Serbia', '381', 'RSD', 'europe', 8, 9, 1, '6', [['MTS'], ['Yettel'], ['A1']]],
+    ['BA', '波黑', 'Bosnia and Herzegovina', '387', 'BAM', 'europe', 8, 8, 1, '6', [['BH Telecom'], ['m:tel'], ['HT Eronet']]],
+    ['ME', '黑山', 'Montenegro', '382', 'EUR', 'europe', 8, 8, 1, '6', [['One'], ['Crnogorski Telekom'], ['m:tel']]],
+    ['MK', '北马其顿', 'North Macedonia', '389', 'MKD', 'europe', 8, 8, 1, '7', [['Makedonski Telekom'], ['A1']]],
+    ['AL', '阿尔巴尼亚', 'Albania', '355', 'ALL', 'europe', 9, 9, 1, '6', [['Vodafone'], ['One']]],
+    ['XK', '科索沃', 'Kosovo', '383', 'EUR', 'europe', 8, 8, 1, '4', [['Vala'], ['IPKO']]],
+    ['UA', '乌克兰', 'Ukraine', '380', 'UAH', 'europe', 9, 9, 1, '[5-9]', [['Kyivstar'], ['Vodafone'], ['lifecell']]],
+    ['BY', '白俄罗斯', 'Belarus', '375', 'BYN', 'europe', 9, 9, 0, '[234]', [['A1'], ['MTS'], ['life:)']]],
+    ['MD', '摩尔多瓦', 'Moldova', '373', 'MDL', 'europe', 8, 8, 1, '[67]', [['Orange'], ['Moldcell'], ['Unité']]],
+    ['RU', '俄罗斯', 'Russia', '7', 'RUB', 'europe', 10, 10, 0, '9', [['MTS'], ['Beeline'], ['MegaFon'], ['Tele2']]],
+    ['LT', '立陶宛', 'Lithuania', '370', 'EUR', 'europe', 8, 8, 1, '6', [['Telia'], ['Bitė'], ['Tele2']]],
+    ['LV', '拉脱维亚', 'Latvia', '371', 'EUR', 'europe', 8, 8, 0, '2', [['LMT'], ['Tele2'], ['Bite']]],
+    ['EE', '爱沙尼亚', 'Estonia', '372', 'EUR', 'europe', 7, 8, 0, '5', [['Telia'], ['Elisa'], ['Tele2']]],
+    ['AD', '安道尔', 'Andorra', '376', 'EUR', 'europe', 6, 6, 0, '[36]', [['Andorra Telecom']]],
+    ['MC', '摩纳哥', 'Monaco', '377', 'EUR', 'europe', 8, 9, 0, '[46]', [['Monaco Telecom']]],
+    ['SM', '圣马力诺', 'San Marino', '378', 'EUR', 'europe', 6, 10, 0, '', [['TIM San Marino']]],
+    ['LI', '列支敦士登', 'Liechtenstein', '423', 'CHF', 'europe', 7, 7, 0, '7', [['FL1'], ['Swisscom'], ['Salt']]],
+    ['GI', '直布罗陀', 'Gibraltar', '350', 'GIP', 'europe', 8, 8, 0, '5', [['Gibtelecom']]],
+    ['FO', '法罗群岛', 'Faroe Islands', '298', 'DKK', 'europe', 6, 6, 0, '', [['Føroya Tele'], ['Hey']]],
+    ['GL', '格陵兰', 'Greenland', '299', 'DKK', 'namerica', 6, 6, 0, '', [['Tusass']]],
+    ['IM', '马恩岛', 'Isle of Man', '44', 'GBP', 'europe', 10, 10, 1, '7', [['Manx Telecom'], ['Sure']]],
+    ['JE', '泽西岛', 'Jersey', '44', 'GBP', 'europe', 10, 10, 1, '7', [['JT'], ['Sure'], ['Airtel-Vodafone']]],
+    ['GG', '根西岛', 'Guernsey', '44', 'GBP', 'europe', 10, 10, 1, '7', [['Sure'], ['JT'], ['Airtel-Vodafone']]],
+    // ===== 非洲 =====
+    ['EG', '埃及', 'Egypt', '20', 'EGP', 'africa', 10, 10, 1, '1', [['Vodafone'], ['Orange'], ['e& Egypt'], ['WE']]],
+    ['MA', '摩洛哥', 'Morocco', '212', 'MAD', 'africa', 9, 9, 1, '[67]', [['Maroc Telecom'], ['Orange'], ['inwi']]],
+    ['DZ', '阿尔及利亚', 'Algeria', '213', 'DZD', 'africa', 9, 9, 1, '[567]', [['Djezzy'], ['Mobilis'], ['Ooredoo']]],
+    ['TN', '突尼斯', 'Tunisia', '216', 'TND', 'africa', 8, 8, 0, '[2459]', [['Ooredoo'], ['Tunisie Telecom'], ['Orange']]],
+    ['LY', '利比亚', 'Libya', '218', 'LYD', 'africa', 9, 9, 1, '9', [['Libyana'], ['Al Madar']]],
+    ['SD', '苏丹', 'Sudan', '249', 'SDG', 'africa', 9, 9, 1, '[19]', [['Zain'], ['MTN'], ['Sudani']]],
+    ['SS', '南苏丹', 'South Sudan', '211', 'SSP', 'africa', 9, 9, 1, '9', [['MTN'], ['Zain'], ['Digitel']]],
+    ['ET', '埃塞俄比亚', 'Ethiopia', '251', 'ETB', 'africa', 9, 9, 1, '[79]', [['Ethio Telecom'], ['Safaricom Ethiopia']]],
+    ['ER', '厄立特里亚', 'Eritrea', '291', 'ERN', 'africa', 7, 7, 1, '', [['EriTel']]],
+    ['DJ', '吉布提', 'Djibouti', '253', 'DJF', 'africa', 8, 8, 0, '77', [['Djibouti Telecom']]],
+    ['SO', '索马里', 'Somalia', '252', 'SOS', 'africa', 8, 9, 1, '', [['Hormuud'], ['Somtel'], ['Telesom'], ['Golis']]],
+    ['KE', '肯尼亚', 'Kenya', '254', 'KES', 'africa', 9, 9, 1, '[17]', [['Safaricom'], ['Airtel'], ['Telkom Kenya']]],
+    ['UG', '乌干达', 'Uganda', '256', 'UGX', 'africa', 9, 9, 1, '7', [['MTN'], ['Airtel'], ['Lycamobile']]],
+    ['TZ', '坦桑尼亚', 'Tanzania', '255', 'TZS', 'africa', 9, 9, 1, '[67]', [['Vodacom'], ['Airtel'], ['Yas (Tigo)'], ['Halotel']]],
+    ['RW', '卢旺达', 'Rwanda', '250', 'RWF', 'africa', 9, 9, 1, '7', [['MTN'], ['Airtel']]],
+    ['BI', '布隆迪', 'Burundi', '257', 'BIF', 'africa', 8, 8, 0, '[67]', [['Econet Leo'], ['Lumitel'], ['Onatel']]],
+    ['MZ', '莫桑比克', 'Mozambique', '258', 'MZN', 'africa', 9, 9, 0, '8', [['Vodacom'], ['Tmcel'], ['Movitel']]],
+    ['MW', '马拉维', 'Malawi', '265', 'MWK', 'africa', 9, 9, 1, '[89]', [['Airtel'], ['TNM']]],
+    ['ZM', '赞比亚', 'Zambia', '260', 'ZMW', 'africa', 9, 9, 1, '[79]', [['MTN'], ['Airtel'], ['Zamtel']]],
+    ['ZW', '津巴布韦', 'Zimbabwe', '263', 'USD', 'africa', 9, 9, 1, '7', [['Econet'], ['NetOne'], ['Telecel']]],
+    ['BW', '博茨瓦纳', 'Botswana', '267', 'BWP', 'africa', 8, 8, 0, '7', [['Mascom'], ['Orange'], ['BTC Mobile']]],
+    ['NA', '纳米比亚', 'Namibia', '264', 'NAD', 'africa', 9, 9, 1, '8', [['MTC'], ['TN Mobile']]],
+    ['ZA', '南非', 'South Africa', '27', 'ZAR', 'africa', 9, 9, 1, '[678]', [['Vodacom'], ['MTN'], ['Cell C'], ['Telkom']]],
+    ['LS', '莱索托', 'Lesotho', '266', 'LSL', 'africa', 8, 8, 0, '[56]', [['Vodacom'], ['Econet']]],
+    ['SZ', '斯威士兰', 'Eswatini', '268', 'SZL', 'africa', 8, 8, 0, '7', [['MTN'], ['Eswatini Mobile']]],
+    ['AO', '安哥拉', 'Angola', '244', 'AOA', 'africa', 9, 9, 0, '9', [['Unitel'], ['Movicel'], ['Africell']]],
+    ['CD', '刚果（金）', 'DR Congo', '243', 'CDF', 'africa', 9, 9, 1, '[89]', [['Vodacom'], ['Airtel'], ['Orange'], ['Africell']]],
+    ['CG', '刚果（布）', 'Congo', '242', 'XAF', 'africa', 9, 9, 0, '0', [['MTN'], ['Airtel']]],
+    ['GA', '加蓬', 'Gabon', '241', 'XAF', 'africa', 8, 8, 0, '', [['Airtel'], ['Moov Africa']]],
+    ['GQ', '赤道几内亚', 'Equatorial Guinea', '240', 'XAF', 'africa', 9, 9, 0, '[235]', [['GETESA'], ['Muni']]],
+    ['CM', '喀麦隆', 'Cameroon', '237', 'XAF', 'africa', 9, 9, 0, '6', [['MTN'], ['Orange'], ['Camtel'], ['Nexttel']]],
+    ['CF', '中非', 'Central African Republic', '236', 'XAF', 'africa', 8, 8, 0, '7', [['Telecel'], ['Orange'], ['Moov Africa']]],
+    ['TD', '乍得', 'Chad', '235', 'XAF', 'africa', 8, 8, 0, '[69]', [['Airtel'], ['Moov Africa']]],
+    ['NG', '尼日利亚', 'Nigeria', '234', 'NGN', 'africa', 10, 10, 1, '[789]', [['MTN', '803,806,703,706,813,816,810,814,903,906,913,916'], ['Airtel', '802,808,708,812,701,902,907,901,912'], ['Glo', '805,807,705,815,811,905,915'], ['9mobile', '809,817,818,909,908']]],
+    ['GH', '加纳', 'Ghana', '233', 'GHS', 'africa', 9, 9, 1, '[25]', [['MTN'], ['Telecel'], ['AirtelTigo']]],
+    ['CI', '科特迪瓦', "Côte d'Ivoire", '225', 'XOF', 'africa', 10, 10, 0, '0', [['Orange'], ['MTN'], ['Moov Africa']]],
+    ['SN', '塞内加尔', 'Senegal', '221', 'XOF', 'africa', 9, 9, 0, '7', [['Orange'], ['Free'], ['Expresso']]],
+    ['ML', '马里', 'Mali', '223', 'XOF', 'africa', 8, 8, 0, '[5-9]', [['Orange'], ['Moov Africa Malitel'], ['Telecel']]],
+    ['BF', '布基纳法索', 'Burkina Faso', '226', 'XOF', 'africa', 8, 8, 0, '[5-7]', [['Orange'], ['Moov Africa'], ['Telecel']]],
+    ['NE', '尼日尔', 'Niger', '227', 'XOF', 'africa', 8, 8, 0, '[89]', [['Airtel'], ['Moov Africa'], ['Zamani'], ['Niger Telecom']]],
+    ['GN', '几内亚', 'Guinea', '224', 'GNF', 'africa', 9, 9, 0, '6', [['Orange'], ['MTN'], ['Cellcom']]],
+    ['GW', '几内亚比绍', 'Guinea-Bissau', '245', 'XOF', 'africa', 9, 9, 0, '9', [['Orange'], ['MTN']]],
+    ['SL', '塞拉利昂', 'Sierra Leone', '232', 'SLE', 'africa', 8, 8, 1, '[2-9]', [['Orange'], ['Africell'], ['Qcell']]],
+    ['LR', '利比里亚', 'Liberia', '231', 'LRD', 'africa', 8, 9, 1, '[578]', [['Orange'], ['Lonestar Cell MTN']]],
+    ['TG', '多哥', 'Togo', '228', 'XOF', 'africa', 8, 8, 0, '[79]', [['Yas (Togocel)'], ['Moov Africa']]],
+    ['BJ', '贝宁', 'Benin', '229', 'XOF', 'africa', 8, 10, 0, '', [['MTN'], ['Moov Africa'], ['Celtiis']]],
+    ['GM', '冈比亚', 'Gambia', '220', 'GMD', 'africa', 7, 7, 0, '[2-9]', [['Africell'], ['QCell'], ['Gamcel'], ['Comium']]],
+    ['MR', '毛里塔尼亚', 'Mauritania', '222', 'MRU', 'africa', 8, 8, 0, '[234]', [['Mattel'], ['Moov Africa Mauritel'], ['Chinguitel']]],
+    ['CV', '佛得角', 'Cabo Verde', '238', 'CVE', 'africa', 7, 7, 0, '[59]', [['CVMóvel'], ['Unitel T+']]],
+    ['ST', '圣多美和普林西比', 'São Tomé and Príncipe', '239', 'STN', 'africa', 7, 7, 0, '9', [['CST'], ['Unitel']]],
+    ['MG', '马达加斯加', 'Madagascar', '261', 'MGA', 'africa', 9, 9, 1, '3', [['Telma'], ['Orange'], ['Airtel']]],
+    ['MU', '毛里求斯', 'Mauritius', '230', 'MUR', 'africa', 7, 8, 0, '5', [['my.t'], ['Emtel'], ['Chili']]],
+    ['SC', '塞舌尔', 'Seychelles', '248', 'SCR', 'africa', 7, 7, 0, '2', [['Cable & Wireless'], ['Airtel']]],
+    ['KM', '科摩罗', 'Comoros', '269', 'KMF', 'africa', 7, 7, 0, '[34]', [['Comores Telecom'], ['Telma']]],
+    ['RE', '留尼汪', 'Réunion', '262', 'EUR', 'africa', 9, 9, 1, '[67]', [['Orange'], ['SFR'], ['Free']]],
+    ['YT', '马约特', 'Mayotte', '262', 'EUR', 'africa', 9, 9, 1, '6', [['Orange'], ['SFR']]],
+    // ===== 北美洲（含中美洲、加勒比） =====
+    ['US', '美国', 'United States', '1', 'USD', 'namerica', 10, 10, 0, '[2-9]', [['AT&T'], ['T-Mobile'], ['Verizon'], ['Boost Mobile'], ['Cricket']]],
+    ['CA', '加拿大', 'Canada', '1', 'CAD', 'namerica', 10, 10, 0, '[2-9]', [['Rogers'], ['Bell'], ['Telus'], ['Freedom Mobile']]],
+    ['MX', '墨西哥', 'Mexico', '52', 'MXN', 'namerica', 10, 10, 0, '[1-9]', [['Telcel'], ['Movistar'], ['AT&T']]],
+    ['GT', '危地马拉', 'Guatemala', '502', 'GTQ', 'namerica', 8, 8, 0, '[345]', [['Claro'], ['Tigo']]],
+    ['BZ', '伯利兹', 'Belize', '501', 'BZD', 'namerica', 7, 7, 0, '6', [['Digi (BTL)'], ['Smart']]],
+    ['SV', '萨尔瓦多', 'El Salvador', '503', 'USD', 'namerica', 8, 8, 0, '[67]', [['Tigo'], ['Claro'], ['Movistar'], ['Digicel']]],
+    ['HN', '洪都拉斯', 'Honduras', '504', 'HNL', 'namerica', 8, 8, 0, '[389]', [['Tigo'], ['Claro']]],
+    ['NI', '尼加拉瓜', 'Nicaragua', '505', 'NIO', 'namerica', 8, 8, 0, '[578]', [['Claro'], ['Tigo']]],
+    ['CR', '哥斯达黎加', 'Costa Rica', '506', 'CRC', 'namerica', 8, 8, 0, '[5678]', [['Kölbi'], ['Claro'], ['Liberty']]],
+    ['PA', '巴拿马', 'Panama', '507', 'PAB', 'namerica', 8, 8, 0, '6', [['Tigo'], ['Claro'], ['Digicel']]],
+    ['CU', '古巴', 'Cuba', '53', 'CUP', 'namerica', 8, 8, 0, '5', [['Cubacel']]],
+    ['DO', '多米尼加', 'Dominican Republic', '1', 'DOP', 'namerica', 10, 10, 0, '8[024]9', [['Claro'], ['Altice'], ['Viva']]],
+    ['HT', '海地', 'Haiti', '509', 'HTG', 'namerica', 8, 8, 0, '[34]', [['Digicel'], ['Natcom']]],
+    ['JM', '牙买加', 'Jamaica', '1', 'JMD', 'namerica', 10, 10, 0, '(876|658)', [['Digicel'], ['Flow']]],
+    ['PR', '波多黎各', 'Puerto Rico', '1', 'USD', 'namerica', 10, 10, 0, '(787|939)', [['Claro'], ['Liberty'], ['T-Mobile']]],
+    ['BS', '巴哈马', 'Bahamas', '1', 'BSD', 'namerica', 10, 10, 0, '242', [['BTC'], ['Aliv']]],
+    ['BB', '巴巴多斯', 'Barbados', '1', 'BBD', 'namerica', 10, 10, 0, '246', [['Flow'], ['Digicel']]],
+    ['TT', '特立尼达和多巴哥', 'Trinidad and Tobago', '1', 'TTD', 'namerica', 10, 10, 0, '868', [['bmobile'], ['Digicel']]],
+    ['AG', '安提瓜和巴布达', 'Antigua and Barbuda', '1', 'XCD', 'namerica', 10, 10, 0, '268', [['Flow'], ['Digicel'], ['APUA']]],
+    ['DM', '多米尼克', 'Dominica', '1', 'XCD', 'namerica', 10, 10, 0, '767', [['Flow'], ['Digicel']]],
+    ['GD', '格林纳达', 'Grenada', '1', 'XCD', 'namerica', 10, 10, 0, '473', [['Flow'], ['Digicel']]],
+    ['KN', '圣基茨和尼维斯', 'Saint Kitts and Nevis', '1', 'XCD', 'namerica', 10, 10, 0, '869', [['Flow'], ['Digicel']]],
+    ['LC', '圣卢西亚', 'Saint Lucia', '1', 'XCD', 'namerica', 10, 10, 0, '758', [['Flow'], ['Digicel']]],
+    ['VC', '圣文森特和格林纳丁斯', 'Saint Vincent and the Grenadines', '1', 'XCD', 'namerica', 10, 10, 0, '784', [['Flow'], ['Digicel']]],
+    ['KY', '开曼群岛', 'Cayman Islands', '1', 'KYD', 'namerica', 10, 10, 0, '345', [['Flow'], ['Digicel']]],
+    ['BM', '百慕大', 'Bermuda', '1', 'BMD', 'namerica', 10, 10, 0, '441', [['One'], ['Digicel']]],
+    ['TC', '特克斯和凯科斯群岛', 'Turks and Caicos Islands', '1', 'USD', 'namerica', 10, 10, 0, '649', [['Flow'], ['Digicel']]],
+    ['VG', '英属维尔京群岛', 'British Virgin Islands', '1', 'USD', 'namerica', 10, 10, 0, '284', [['Flow'], ['CCT'], ['Digicel']]],
+    ['VI', '美属维尔京群岛', 'U.S. Virgin Islands', '1', 'USD', 'namerica', 10, 10, 0, '340', [['Viya'], ['Liberty']]],
+    ['AI', '安圭拉', 'Anguilla', '1', 'XCD', 'namerica', 10, 10, 0, '264', [['Flow'], ['Digicel']]],
+    ['MS', '蒙特塞拉特', 'Montserrat', '1', 'XCD', 'namerica', 10, 10, 0, '664', [['Flow']]],
+    ['AW', '阿鲁巴', 'Aruba', '297', 'AWG', 'namerica', 7, 7, 0, '[567]', [['Setar'], ['Digicel']]],
+    ['CW', '库拉索', 'Curaçao', '599', 'ANG', 'namerica', 7, 7, 0, '[569]', [['Flow'], ['Digicel']]],
+    ['SX', '荷属圣马丁', 'Sint Maarten', '1', 'ANG', 'namerica', 10, 10, 0, '721', [['TelCell'], ['UTS']]],
+    ['GP', '瓜德罗普', 'Guadeloupe', '590', 'EUR', 'namerica', 9, 9, 1, '69', [['Orange'], ['Digicel'], ['SFR']]],
+    ['MQ', '马提尼克', 'Martinique', '596', 'EUR', 'namerica', 9, 9, 1, '69', [['Orange'], ['Digicel'], ['SFR']]],
+    // ===== 南美洲 =====
+    ['BR', '巴西', 'Brazil', '55', 'BRL', 'samerica', 11, 11, 0, '[1-9][1-9]9', [['Vivo'], ['Claro'], ['TIM']]],
+    ['AR', '阿根廷', 'Argentina', '54', 'ARS', 'samerica', 10, 10, 1, '', [['Personal'], ['Movistar'], ['Claro']]],
+    ['CL', '智利', 'Chile', '56', 'CLP', 'samerica', 9, 9, 0, '9', [['Entel'], ['Movistar'], ['Claro'], ['WOM']]],
+    ['CO', '哥伦比亚', 'Colombia', '57', 'COP', 'samerica', 10, 10, 0, '3', [['Claro'], ['Movistar'], ['Tigo'], ['WOM']]],
+    ['PE', '秘鲁', 'Peru', '51', 'PEN', 'samerica', 9, 9, 0, '9', [['Movistar'], ['Claro'], ['Entel'], ['Bitel']]],
+    ['VE', '委内瑞拉', 'Venezuela', '58', 'VES', 'samerica', 10, 10, 1, '4', [['Movilnet'], ['Movistar'], ['Digitel']]],
+    ['EC', '厄瓜多尔', 'Ecuador', '593', 'USD', 'samerica', 9, 9, 1, '9', [['Claro'], ['Movistar'], ['CNT']]],
+    ['BO', '玻利维亚', 'Bolivia', '591', 'BOB', 'samerica', 8, 8, 0, '[67]', [['Entel'], ['Tigo'], ['Viva']]],
+    ['PY', '巴拉圭', 'Paraguay', '595', 'PYG', 'samerica', 9, 9, 1, '9', [['Tigo'], ['Personal'], ['Claro']]],
+    ['UY', '乌拉圭', 'Uruguay', '598', 'UYU', 'samerica', 8, 8, 1, '9', [['Antel'], ['Movistar'], ['Claro']]],
+    ['GY', '圭亚那', 'Guyana', '592', 'GYD', 'samerica', 7, 7, 0, '6', [['GTT'], ['ENet']]],
+    ['SR', '苏里南', 'Suriname', '597', 'SRD', 'samerica', 7, 7, 0, '[678]', [['Telesur'], ['Digicel']]],
+    ['GF', '法属圭亚那', 'French Guiana', '594', 'EUR', 'samerica', 9, 9, 1, '69', [['Orange'], ['Digicel'], ['SFR']]],
+    // ===== 大洋洲 =====
+    ['AU', '澳大利亚', 'Australia', '61', 'AUD', 'oceania', 9, 9, 1, '4', [['Telstra'], ['Optus'], ['Vodafone']]],
+    ['NZ', '新西兰', 'New Zealand', '64', 'NZD', 'oceania', 8, 10, 1, '2', [['One NZ'], ['Spark'], ['2degrees']]],
+    ['PG', '巴布亚新几内亚', 'Papua New Guinea', '675', 'PGK', 'oceania', 8, 8, 0, '7', [['Digicel'], ['bmobile']]],
+    ['FJ', '斐济', 'Fiji', '679', 'FJD', 'oceania', 7, 7, 0, '[79]', [['Vodafone'], ['Digicel']]],
+    ['SB', '所罗门群岛', 'Solomon Islands', '677', 'SBD', 'oceania', 7, 7, 0, '[78]', [['Our Telekom'], ['bemobile']]],
+    ['VU', '瓦努阿图', 'Vanuatu', '678', 'VUV', 'oceania', 7, 7, 0, '[57]', [['Digicel'], ['Vodafone']]],
+    ['WS', '萨摩亚', 'Samoa', '685', 'WST', 'oceania', 7, 7, 0, '[78]', [['Digicel'], ['Vodafone']]],
+    ['TO', '汤加', 'Tonga', '676', 'TOP', 'oceania', 7, 7, 0, '[78]', [['Digicel'], ['U-Call']]],
+    ['KI', '基里巴斯', 'Kiribati', '686', 'AUD', 'oceania', 8, 8, 0, '', [['ATH Kiribati']]],
+    ['TV', '图瓦卢', 'Tuvalu', '688', 'AUD', 'oceania', 7, 7, 0, '', [['Tuvalu Telecom']]],
+    ['NR', '瑙鲁', 'Nauru', '674', 'AUD', 'oceania', 7, 7, 0, '', [['Digicel']]],
+    ['FM', '密克罗尼西亚', 'Micronesia', '691', 'USD', 'oceania', 7, 7, 0, '', [['FSM Telecom']]],
+    ['MH', '马绍尔群岛', 'Marshall Islands', '692', 'USD', 'oceania', 7, 7, 0, '', [['NTA']]],
+    ['PW', '帕劳', 'Palau', '680', 'USD', 'oceania', 7, 7, 0, '', [['PNCC']]],
+    ['NC', '新喀里多尼亚', 'New Caledonia', '687', 'XPF', 'oceania', 6, 6, 0, '[789]', [['Mobilis (OPT)']]],
+    ['PF', '法属波利尼西亚', 'French Polynesia', '689', 'XPF', 'oceania', 8, 8, 0, '8', [['Vini'], ['Vodafone']]],
+    ['GU', '关岛', 'Guam', '1', 'USD', 'oceania', 10, 10, 0, '671', [['Docomo Pacific'], ['GTA'], ['IT&E']]],
+    ['MP', '北马里亚纳群岛', 'Northern Mariana Islands', '1', 'USD', 'oceania', 10, 10, 0, '670', [['Docomo Pacific'], ['IT&E']]],
+    ['AS', '美属萨摩亚', 'American Samoa', '1', 'USD', 'oceania', 10, 10, 0, '684', [['Bluesky']]],
+    ['CK', '库克群岛', 'Cook Islands', '682', 'NZD', 'oceania', 5, 5, 0, '', [['Vodafone Cook Islands']]]
+  ];
+
+  // 品牌色（按名称关键字匹配，未命中则从调色板取色）
+  var BRAND = [
+    ['vodafone', '#E60000'], ['vodacom', '#E60000'], ['orange', '#FF7900'], ['mtn', '#FFCC00'], ['airtel', '#E40000'], ['telenor', '#0084C9'],
+    ['movistar', '#019DF4'], ['claro', '#E3001B'], ['tigo', '#00377B'], ['digicel', '#E40028'], ['ooredoo', '#ED1C24'], ['zain', '#6BC04B'],
+    ['etisalat', '#E2001A'], ['e&', '#E2001A'], ['flow', '#5C2D91'], ['telia', '#990AE3'], ['tele2', '#0060A9'], ['t-mobile', '#E20074'],
+    ['telekom', '#E20074'], ['magenta', '#E20074'], ['o2', '#0019A5'], ['three', '#1F1F1F'], ['a1', '#E30613'], ['beeline', '#FFCC00'],
+    ['megafon', '#00B956'], ['mts', '#E30611'], ['safaricom', '#4CAF50'], ['globe', '#1F4FA3'], ['smart', '#00A651'], ['viettel', '#E0202A'],
+    ['jio', '#0F3CC9'], ['stc', '#4F008C'], ['turkcell', '#FFC900'], ['lycamobile', '#0091D4'], ['moov', '#0072BC'], ['africell', '#7B2CBF'],
+    ['unitel', '#F58220'], ['econet', '#0072CE'], ['entel', '#0057A8'], ['personal', '#00A9E0'], ['wom', '#5C2D91'], ['bitel', '#0066B3'],
+    ['kyivstar', '#00A2E1'], ['lifecell', '#F5B800'], ['play', '#5B2D8E'], ['telstra', '#0D54FF'], ['optus', '#00A79D'], ['spark', '#FF6A00'],
+    ['singtel', '#E4002B'], ['starhub', '#6BBE45'], ['telkomsel', '#E30613'], ['indosat', '#F6A800'], ['xl', '#1E4D9B'], ['maxis', '#3FAE49'],
+    ['celcom', '#0056A7'], ['ais', '#3FA535'], ['true', '#E2231A'], ['docomo', '#CC0033'], ['softbank', '#8B8B8B'], ['rakuten', '#BF0000'],
+    ['sk telecom', '#EA002C'], ['kt', '#E4002B'], ['lg', '#E6007E'], ['at&t', '#009FDB'], ['verizon', '#CD040B'], ['vivo', '#660099'],
+    ['tim', '#004691'], ['ee', '#007B85'], ['swisscom', '#0A2B66'], ['proximus', '#5C2D91'], ['kpn', '#00A02A'], ['sfr', '#E2001A'],
+    ['bouygues', '#009BDF'], ['free', '#CD1E25'], ['iliad', '#CD1E25'], ['cosmote', '#78BE20'], ['yettel', '#00B5A5'], ['glo', '#3AAA35'],
+    ['9mobile', '#006B3F'], ['telcel', '#0B2A8A'], ['rogers', '#DA291C'], ['bell', '#0057B8'], ['telus', '#4B286D'], ['dialog', '#B71234'],
+    ['grameenphone', '#0E5EA8'], ['jazz', '#E31E24'], ['zong', '#6DBE45'], ['csl', '#0B5ED7'], ['3', '#F26B1D'], ['中国移动', '#1D7BD8'],
+    ['中国联通', '#E0452E'], ['中国电信', '#1E9E8A'], ['中国广电', '#C8102E'], ['中华电信', '#0A6DB2'], ['台湾大哥大', '#E2231A'], ['远传', '#7A2E8E']
+  ];
+  var PALETTE = ['#0F5C6B', '#1D7BD8', '#7A2E8E', '#C8102E', '#1E9E8A', '#F26B1D', '#3B6E22', '#8A5A00', '#2F4858', '#B03A5B'];
+  var RANGE_BRANDS = ['globe', 'smart', 'mtn', 'airtel', 'telkomsel', 'at&t', 't-mobile', 'safaricom', 'vodacom', 'jio', 'digicel', 'claro'];
+
+  function brandColor(name) {
+    var n = name.toLowerCase();
+    for (var i = 0; i < BRAND.length; i++) {
+      var k = BRAND[i][0];
+      if (k.length <= 2 ? (n === k || n.indexOf(k + ' ') === 0 || n.indexOf(k + 'hk') === 0) : n.indexOf(k) >= 0) return BRAND[i][1];
+    }
+    var h = 0; for (var j = 0; j < name.length; j++) h = (h * 31 + name.charCodeAt(j)) >>> 0;
+    return PALETTE[h % PALETTE.length];
+  }
+  function isLight(hex) {
+    var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000 > 170;
+  }
+  function avatarText(name, used) {
+    var n = name.replace(/\(.*?\)/g, '').trim();
+    var av;
+    if (/[一-鿿]/.test(n)) av = n.replace(/^(中国|中华|台湾|香港|澳门)/, '').slice(0, 2);
+    else {
+      var words = n.split(/[\s\/]+/).filter(Boolean);
+      if (words[0].length <= 4) av = words[0];
+      else if (words.length > 1) av = words.slice(0, 3).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+      else av = words[0].slice(0, 3);
+    }
+    if (used.indexOf(av) >= 0) av = n.charAt(0).toUpperCase() + n.replace(/[^a-z]/gi, '').slice(-2).toLowerCase();
+    used.push(av);
+    return av;
+  }
+  function flagOf(code) {
+    return String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65, 0x1F1E6 + code.charCodeAt(1) - 65);
+  }
+  function nice(x) {
+    var p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
+    var step = m < 1.4 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10;
+    return Math.round(step * p * 100) / 100;
+  }
+  // 面额：强货币用 5/10/20/50/100 阶梯（极强货币如 KWD 再缩小 10 倍），其余按人民币 10–500 元换算后取整数
+  function facesFor(cur, perCny) {
+    if (cur === 'CNY') return [10, 20, 30, 50, 100, 200, 300, 500];
+    if (perCny < 1) {
+      var ladders = [[5, 10, 20, 50, 100], [1, 2, 5, 10, 20], [0.5, 1, 2, 5, 10]];
+      for (var i = 0; i < ladders.length; i++) {
+        var l = ladders[i].filter(function (x) { return x / perCny <= 800; });
+        if (l.length >= 4 || i === ladders.length - 1) return l;
+      }
+    }
+    var out = [];
+    [10, 20, 50, 100, 200, 500].forEach(function (cny) { var f = nice(cny * perCny); if (out.indexOf(f) < 0) out.push(f); });
+    return out;
+  }
+  var COUNTRIES = RAW.map(function (r) {
+    var perCny = Math.round(FX[r[4]] / FX.CNY * 1000) / 1000;
+    if (perCny >= 100) perCny = Math.round(perCny);
+    var faces = facesFor(r[4], perCny);
+    var used = [];
+    var ops = r[10].map(function (o, i) {
+      var color = brandColor(o[0]);
+      var isRange = RANGE_BRANDS.some(function (k) { return o[0].toLowerCase().indexOf(k) >= 0; });
+      return {
+        id: r[0].toLowerCase() + '-' + i, name: o[0], color: color, light: isLight(color), av: avatarText(o[0], used),
+        prefixes: o[1] ? o[1].split(',') : null, eta: i < 2 ? 'instant' : 'minutes',
+        faces: faces.slice(), prices: r[4] === 'CNY' ? faces.map(function (f) { return CN_PRICES[f]; }) : null,
+        range: isRange && r[4] !== 'CNY' ? [faces[0], faces[faces.length - 1] * 5] : null
+      };
+    });
+    return { code: r[0], name: r[1], en: r[2], dial: r[3], flag: flagOf(r[0]), cur: r[4], region: r[5], perCny: perCny,
+      fee: r[4] === 'CNY' ? 0 : 0.03, len: [r[6], r[7]], trunk0: !!r[8], start: r[9] ? new RegExp('^' + r[9]) : null,
+      hot: HOT.indexOf(r[0]) >= 0, ops: ops };
+  });
+
+  var MY_PHONE = { cc: 'CN', num: '13812345678' };
+  var BALANCE = 36.2;
+
+  var state = { country: null, phone: '', op: null, opAuto: false, face: null, custom: false, orders: [], step: 'country', scenario: 'ok', pending: null, ddOpen: false, user: null, nav: [], loginNext: null };
+
+  // ---------- 工具 ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var byCode = function (cc) { return COUNTRIES.filter(function (c) { return c.code === cc; })[0]; };
+  var money = function (n) { return '¥ ' + n.toFixed(2); };
+  var fmtLocal = function (n, cur) { return n.toLocaleString('en-US') + ' ' + cur; };
+  var now = function () { var d = new Date(); return [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (x) { return (x < 10 ? '0' : '') + x; }).join(':'); };
+  var todayStr = function () { var d = new Date(); return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + now().slice(0, 5); };
+  var orderNo = function () { var d = new Date(); return 'GZ' + String(d.getFullYear()).slice(2) + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + String(Math.floor(Math.random() * 1e8)).padStart(8, '0'); };
+
+  // 分组显示：3-4-4（11位）、3-3-4（10位）、4-4（8位）、其余每 3 位一组
+  function groupDigits(d) {
+    if (!d) return '';
+    if (d.length === 11) return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1 $2 $3');
+    if (d.length === 10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
+    if (d.length === 8) return d.replace(/(\d{4})(\d{4})/, '$1 $2');
+    var out = [];
+    for (var i = 0; i < d.length; i += 3) out.push(d.slice(i, i + 3));
+    if (out.length > 1 && out[out.length - 1].length === 1) { var last = out.pop(); out[out.length - 1] += last; }
+    return out.join(' ');
+  }
+  var fullNum = function (c, d) { return '+' + c.dial + ' ' + groupDigits(d); };
+
+  function validate(c, d) {
+    if (d.length < c.len[0]) return { ok: false, msg: c.len[0] === c.len[1] ? '还差 ' + (c.len[0] - d.length) + ' 位' : '至少 ' + c.len[0] + ' 位，还差 ' + (c.len[0] - d.length) + ' 位' };
+    if (d.length > c.len[1]) return { ok: false, err: true, msg: c.name + '号码最多 ' + c.len[1] + ' 位，请检查' };
+    if (c.start && !c.start.test(d)) return { ok: false, err: true, msg: '不是有效的' + c.name + '手机号，请检查' };
+    return { ok: true };
+  }
+  function detectOp(c, d) {
+    var hit = c.ops.filter(function (o) { return o.prefixes && o.prefixes.some(function (p) { return d.indexOf(p) === 0; }); });
+    return hit[0] || null;
+  }
+  var MEMBER_OFF = 0.02; // 会员跨境充值 98 折
+  function cnyPrice(c, o, face, noMember) {
+    if (c.code === 'CN') { var i = o.faces.indexOf(face); return i >= 0 ? o.prices[i] : Math.round(face * 0.988 * 100) / 100; }
+    var off = state.user && !noMember ? MEMBER_OFF : 0;
+    return Math.round(face / c.perCny * (1 + c.fee - off) * 100) / 100;
+  }
+  function etaText(o) { return state.scenario === 'slow' ? '预计 5–30 分钟到账' : (o.eta === 'instant' ? '即时到账' : '1–10 分钟到账'); }
+
+  function log(msg) {
+    var ol = $('log'); var e = ol.querySelector('.empty'); if (e) e.remove();
+    var li = document.createElement('li'); li.innerHTML = '<time>' + now() + '</time><span>' + msg + '</span>';
+    ol.insertBefore(li, ol.firstChild);
+  }
+  var toastTimer;
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+  var STEPS = ['country', 'input', 'operator', 'amount', 'pay', 'result', 'orders'];
+  function setStep(s) {
+    state.step = s; var idx = STEPS.indexOf(s);
+    document.querySelectorAll('#flow li').forEach(function (li) {
+      var i = STEPS.indexOf(li.dataset.step);
+      li.className = i < idx ? 'done' : i === idx ? 'on' : '';
+    });
+  }
+  function syncStep() {
+    if (!state.country) setStep('country');
+    else if (!(state.phone && validate(state.country, state.phone).ok)) setStep('input');
+    else if (!state.op) setStep('operator');
+    else if (state.face == null) setStep('amount');
+    else setStep('pay');
+  }
+  function show(view) {
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('on', v.id === 'v-' + view); });
+    var tab = view === 'orders' ? 'orders' : (view === 'me' || view === 'benefits' || view === 'service' || view === 'terms' || view === 'privacy') ? 'me' : 'home';
+    document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
+  }
+  function isMaint() { return state.scenario === 'maint' && !!state.op; }
+
+  // ---------- 国家/地区 ----------
+  function setCountry(cc, silent) {
+    var c = byCode(cc); if (!c) return;
+    var changed = !state.country || state.country.code !== cc;
+    state.country = c;
+    $('c-flag').textContent = c.flag; $('c-name').textContent = c.name;
+    $('c-sub').textContent = c.en + ' · ' + c.cur + (c.code === 'CN' ? '' : ' · 1 CNY ≈ ' + c.perCny + ' ' + c.cur);
+    $('c-code').textContent = '+' + c.dial;
+    $('phone').placeholder = c.len[0] === c.len[1] ? c.len[0] + ' 位手机号' : c.len[0] + '–' + c.len[1] + ' 位手机号';
+    if (changed) { state.op = null; state.opAuto = false; state.face = null; state.custom = false; state.ddOpen = false; }
+    if (!silent) log('选择国家/地区：' + c.flag + ' ' + c.name + '（+' + c.dial + '）');
+    onPhone();
+  }
+  function renderCountryList(q) {
+    q = (q || '').trim().toLowerCase();
+    var box = $('c-list'); box.innerHTML = '';
+    var match = function (c) { return !q || c.name.indexOf(q) >= 0 || c.en.toLowerCase().indexOf(q) >= 0 || ('+' + c.dial).indexOf(q) >= 0 || c.dial.indexOf(q.replace('+', '')) === 0 || c.code.toLowerCase() === q; };
+    var groups;
+    if (q) groups = [['搜索结果', COUNTRIES.filter(match)]];
+    else {
+      groups = [['常用', COUNTRIES.filter(function (c) { return c.hot; })]];
+      Object.keys(REGIONS).forEach(function (r) { groups.push([REGIONS[r], COUNTRIES.filter(function (c) { return c.region === r; })]); });
+    }
+    var any = false;
+    groups.forEach(function (g) {
+      if (!g[1].length) return; any = true;
+      var h = document.createElement('div'); h.className = 'grp'; h.textContent = g[0] + '（' + g[1].length + '）'; box.appendChild(h);
+      var list = document.createElement('div'); list.className = 'clist';
+      g[1].forEach(function (c) {
+        var b = document.createElement('button'); b.type = 'button';
+        b.className = 'crow' + (state.country && state.country.code === c.code ? ' on' : '');
+        b.innerHTML = '<span class="flag">' + c.flag + '</span><span class="nm"><b>' + c.name + '</b><span>' + c.en + ' · ' + c.ops.length + ' 家运营商</span></span><span class="cc">+' + c.dial + '</span>';
+        b.addEventListener('click', function () { setCountry(c.code); show('home'); $('phone').focus(); });
+        list.appendChild(b);
+      });
+      box.appendChild(list);
+    });
+    if (!any) box.innerHTML = '<div class="noresult">没有找到「' + q + '」<br>试试国家中文名、英文名或区号</div>';
+  }
+  $('country-btn').addEventListener('click', function () { $('c-search').value = ''; renderCountryList(''); show('country'); setStep('country'); $('c-search').focus(); });
+  $('country-back').addEventListener('click', function () { show('home'); syncStep(); });
+  $('c-search').addEventListener('input', function () { renderCountryList(this.value); });
+
+  // ---------- 号码 ----------
+  var phoneEl = $('phone');
+  function onPhone() {
+    var c = state.country;
+    var raw = phoneEl.value.replace(/\D/g, '');
+    var stripped = false;
+    if (c.trunk0 && raw.charAt(0) === '0') { raw = raw.replace(/^0+/, ''); stripped = true; }
+    raw = raw.slice(0, c.len[1]);
+    phoneEl.value = groupDigits(raw);
+    state.phone = raw;
+    $('clear').classList.toggle('show', raw.length > 0);
+    var h = $('numhint'); h.className = 'numhint'; $('numwrap').classList.remove('bad');
+    var v = raw ? validate(c, raw) : null;
+    if (!raw) { h.textContent = '输入' + c.name + '本地手机号，不含国家区号'; }
+    else if (!v.ok) { h.textContent = v.msg; if (v.err) { h.classList.add('err'); $('numwrap').classList.add('bad'); } }
+    else {
+      var auto = detectOp(c, raw);
+      if (auto && (!state.op || state.opAuto)) {
+        if (!state.op || state.op.id !== auto.id) { state.op = auto; state.opAuto = true; state.face = null; state.custom = false; log('号段识别：' + auto.name); }
+      } else if (!auto && state.opAuto) { state.op = null; state.opAuto = false; state.face = null; }
+      h.textContent = (stripped ? '已去掉开头的 0，' : '') + (auto ? '已识别为 ' + auto.name : (c.ops.some(function (o) { return o.prefixes; }) ? '未匹配到号段，请在下方手动选择运营商' : c.name + '不支持号段识别，请手动选择运营商'));
+      if (auto) h.classList.add('ok');
+    }
+    if (raw && !v.ok) { if (state.opAuto) { state.op = null; state.opAuto = false; } state.face = null; }
+    renderOps(); renderGrid(); updatePaybar(); syncStep();
+  }
+  phoneEl.addEventListener('input', onPhone);
+  $('clear').addEventListener('click', function () { phoneEl.value = ''; onPhone(); phoneEl.focus(); });
+  $('use-mine').addEventListener('click', function () { setCountry(MY_PHONE.cc, true); phoneEl.value = MY_PHONE.num; onPhone(); toast('已填入本机号码'); });
+  // ---------- 运营商 ----------
+  var CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  var TICK = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function opLine(o, on) {
+    var maint = on && isMaint();
+    return '<span class="av" style="background:' + o.color + (o.light ? ';color:#1B2430' : '') + '">' + o.av + '</span>' +
+      '<span class="nm"><b>' + o.name + '</b><span>' + (maint ? '通道维护中' : etaText(o)) + (o.range ? ' · 支持自定义金额' : '') + '</span></span>' +
+      (on && state.opAuto ? '<span class="pill">已识别</span>' : '') + (maint ? '<span class="pill m">维护</span>' : '');
+  }
+  function renderOps() {
+    var c = state.country, trig = $('op-trigger'), list = $('op-list');
+    var valid = !!(state.phone && validate(c, state.phone).ok);
+    if (!valid) state.ddOpen = false;
+    var open = state.ddOpen && valid;
+    $('op-sub').textContent = valid ? (state.opAuto ? '已按号段自动识别，可更改' : '请选择号码所属运营商') : c.ops.length + ' 家可充';
+    trig.disabled = !valid;
+    trig.classList.toggle('open', open);
+    trig.setAttribute('aria-expanded', open);
+    trig.innerHTML = (state.op ? opLine(state.op, true) : '<span class="av ph"></span><span class="nm"><b>' + (valid ? '请选择运营商' : '输入有效号码后选择运营商') + '</b></span>') + CHEV;
+    list.innerHTML = ''; list.classList.toggle('on', open);
+    if (!open) return;
+    c.ops.forEach(function (o) {
+      var on = !!(state.op && state.op.id === o.id);
+      var li = document.createElement('li'); li.setAttribute('role', 'option'); li.setAttribute('aria-selected', on);
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'dd-opt' + (on ? ' on' : '');
+      b.innerHTML = opLine(o, on) + TICK;
+      b.addEventListener('click', function () {
+        state.ddOpen = false;
+        if (!(state.op && state.op.id === o.id)) {
+          state.op = o; state.opAuto = false; state.face = null; state.custom = false;
+          log('手动选择运营商：' + o.name);
+        }
+        renderOps(); renderGrid(); updatePaybar(); syncStep();
+      });
+      li.appendChild(b); list.appendChild(li);
+    });
+  }
+  $('op-trigger').addEventListener('click', function () { state.ddOpen = !state.ddOpen; renderOps(); if (state.ddOpen) log('展开运营商列表'); });
+  document.addEventListener('click', function (e) { if (state.ddOpen && !$('op-dd').contains(e.target)) { state.ddOpen = false; renderOps(); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state.ddOpen) { state.ddOpen = false; renderOps(); $('op-trigger').focus(); } });
+
+  // ---------- 面额 ----------
+  function renderGrid() {
+    var c = state.country, o = state.op, g = $('grid'); g.innerHTML = '';
+    var cb = $('custom-box'); cb.classList.toggle('on', !!(o && state.custom)); cb.classList.remove('bad');
+    var ar = $('arrive'); ar.className = 'note arrive';
+    if (!o) {
+      g.className = 'grid off'; $('amt-sub').textContent = c.code === 'CN' ? '官方直充' : '按 ' + c.cur + ' 面值充值';
+      [0, 1, 2].forEach(function () { var t = document.createElement('div'); t.className = 'tile'; t.innerHTML = '<div class="face">—</div><div class="price">&nbsp;</div>'; g.appendChild(t); });
+      ar.textContent = '选择运营商后显示可充面额'; return;
+    }
+    g.className = 'grid' + (isMaint() ? ' off' : '');
+    $('amt-sub').textContent = c.code === 'CN' ? '官方直充，充多少到多少' : '面值为 ' + c.cur + '，按人民币付款';
+    o.faces.forEach(function (f, i) {
+      var t = document.createElement('button'); t.type = 'button';
+      var on = !state.custom && state.face === f;
+      t.className = 'tile' + (on ? ' on' : '');
+      t.setAttribute('aria-pressed', on);
+      var hot = c.code === 'CN' ? (f === 50 || f === 100) : i === 1;
+      var fs = f.toLocaleString('en-US');
+      t.innerHTML = '<div class="face' + (fs.length > 6 ? ' long' : fs.length > 4 ? ' mid' : '') + '">' + fs + '<small>' + (c.code === 'CN' ? '元' : c.cur) + '</small></div>' +
+        '<div class="price">' + (c.code === 'CN' ? '售价 ' : '≈ ') + money(cnyPrice(c, o, f)).replace('¥ ', c.code === 'CN' ? '' : '¥') + '</div>' +
+        (hot ? '<span class="badge">热门</span>' : '');
+      t.addEventListener('click', function () {
+        state.face = f; state.custom = false; renderGrid(); updatePaybar(); syncStep();
+        log('选择面额 ' + fmtLocal(f, c.cur) + '，折合 ' + money(cnyPrice(c, o, f)));
+      });
+      g.appendChild(t);
+    });
+    if (o.range) {
+      var t = document.createElement('button'); t.type = 'button';
+      t.className = 'tile custom' + (state.custom ? ' on' : '');
+      t.innerHTML = '<div class="face">自定义</div><div class="price">' + o.range[0].toLocaleString('en-US') + '–' + o.range[1].toLocaleString('en-US') + '</div>';
+      t.addEventListener('click', function () {
+        state.custom = true; state.face = null; renderGrid(); updatePaybar(); syncStep();
+        $('custom-in').value = ''; $('custom-cny').textContent = ''; $('custom-in').focus();
+      });
+      g.appendChild(t);
+      $('custom-cur').textContent = c.cur; $('custom-in').min = o.range[0]; $('custom-in').max = o.range[1];
+      $('custom-in').placeholder = o.range[0] + '–' + o.range[1];
+    }
+    if (isMaint()) { ar.classList.add('warn'); ar.innerHTML = '<b>' + o.name + ' 通道维护中</b>，预计 30 分钟后恢复，可稍后再试或更换运营商'; }
+    else if (state.scenario === 'slow') { ar.classList.add('warn'); ar.innerHTML = '当前 ' + o.name + ' 到账较慢，<b>预计 5–30 分钟</b>'; }
+    else ar.innerHTML = o.name + ' <b>' + etaText(o) + '</b>' + (c.code === 'CN' ? '' : '，到账后当地运营商会发送短信');
+  }
+  $('custom-in').addEventListener('input', function () {
+    var c = state.country, o = state.op; if (!o || !o.range) return;
+    var n = parseFloat(this.value); var cb = $('custom-box');
+    if (!isFinite(n) || n < o.range[0] || n > o.range[1]) {
+      state.face = null; cb.classList.add('bad');
+      $('custom-cny').textContent = this.value ? '需在 ' + o.range[0] + '–' + o.range[1] + ' 之间' : '';
+    } else { state.face = n; cb.classList.remove('bad'); $('custom-cny').textContent = '≈ ' + money(cnyPrice(c, o, n)); }
+    updatePaybar(); syncStep();
+  });
+  function updatePaybar() {
+    var c = state.country, o = state.op, ok = !!(o && state.face != null && !isMaint() && state.phone && validate(c, state.phone).ok);
+    if (o && state.face != null) {
+      var p = cnyPrice(c, o, state.face);
+      $('sum-price').innerHTML = money(p) + (c.code === 'CN' ? (state.face - p > 0 ? ' <small>已省 ' + (state.face - p).toFixed(2) + '</small>' : '') : ' <small>' + (state.user ? '会员价 · ' : '') + fmtLocal(state.face, c.cur) + '</small>');
+    } else $('sum-price').textContent = '¥ 0.00';
+    $('go-pay').disabled = !ok;
+  }
+
+  // ---------- 支付 ----------
+  $('go-pay').addEventListener('click', function () {
+    var c = state.country, o = state.op, f = state.face, p = cnyPrice(c, o, f);
+    $('s-country').textContent = c.flag + ' ' + c.name;
+    $('s-phone').textContent = fullNum(c, state.phone);
+    $('s-op').textContent = o.name;
+    $('s-face').textContent = c.code === 'CN' ? f + ' 元' : fmtLocal(f, c.cur);
+    $('s-rate').textContent = c.code === 'CN' ? '—' : '1 CNY ≈ ' + c.perCny + ' ' + c.cur;
+    if (c.code === 'CN') { $('s-fee-lbl').textContent = '优惠'; $('s-fee').textContent = '-' + money(f - p); $('s-fee').style.color = 'var(--red)'; }
+    else { $('s-fee-lbl').textContent = '服务费'; $('s-fee').textContent = (c.fee * 100) + '%，已含'; $('s-fee').style.color = ''; }
+    var member = state.user && c.code !== 'CN';
+    $('s-member-row').style.display = member ? '' : 'none';
+    if (member) $('s-member').textContent = '-' + money(cnyPrice(c, o, f, true) - p) + '（98 折）';
+    $('s-total').textContent = money(p);
+    var wal = document.querySelector('input[name=pm][value=账户余额]');
+    wal.disabled = p > BALANCE; wal.closest('label').style.opacity = wal.disabled ? .45 : 1;
+    $('bal').textContent = wal.disabled ? '余额不足' : '余额 ' + money(BALANCE);
+    if (wal.disabled && wal.checked) document.querySelector('input[name=pm][value=微信支付]').checked = true;
+    $('sheet').classList.add('on');
+    log('打开确认页，实付 ' + money(p));
+  });
+  $('sheet-close').addEventListener('click', function () { $('sheet').classList.remove('on'); log('取消付款'); });
+  $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) $('sheet').classList.remove('on'); });
+
+  $('confirm-pay').addEventListener('click', function () {
+    var c = state.country, o = state.op, f = state.face, p = cnyPrice(c, o, f);
+    var pm = document.querySelector('input[name=pm]:checked').value;
+    $('sheet').classList.remove('on');
+    var order = { no: orderNo(), cc: c.code, phone: state.phone, op: o, face: f, price: p, pm: pm, time: todayStr(), status: 'wait' };
+    state.orders.unshift(order);
+    log(pm + ' 付款成功，订单 ' + order.no + ' 已提交 ' + o.name);
+    setStep('result'); show('processing');
+    $('proc-title').textContent = '正在提交给 ' + o.name;
+    $('proc-sub').textContent = pm + ' 已扣款 ' + money(p) + (c.code === 'CN' ? '' : '，' + c.name + '通道处理中');
+    var sc = state.scenario;
+    setTimeout(function () {
+      if (sc === 'fail') { order.status = 'fail'; order.reason = o.name + ' 返回：号码状态异常（停机或已注销）'; log('运营商回执失败，发起原路退款'); }
+      else if (sc === 'slow') { order.status = 'wait'; log('运营商排队中，订单转为处理中'); schedulePendingSettle(order); }
+      else { order.status = 'ok'; log('运营商回执成功，话费已到账'); }
+      renderResult(order); show('result');
+    }, sc === 'fail' ? 1600 : 1400);
+  });
+  function schedulePendingSettle(order) {
+    setTimeout(function () {
+      if (order.status !== 'wait') return;
+      order.status = 'ok';
+      log('延迟订单 ' + order.no + ' 已到账'); toast('订单 ' + order.no.slice(-6) + ' 已到账');
+      if ($('v-result').classList.contains('on') && state.pending === order) renderResult(order);
+      if ($('v-orders').classList.contains('on')) renderOrders();
+    }, 30000);
+  }
+
+  var ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var ICON_WAIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
+  var ICON_FAIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>';
+
+  function renderResult(o) {
+    state.pending = o;
+    var c = byCode(o.cc), head, steps, actions;
+    if (o.status === 'ok') {
+      head = '<div class="mark ok">' + ICON_OK + '</div><h2>充值成功</h2><p>' + o.op.name + ' 已到账' + (c.code === 'CN' ? '，可查看运营商短信' : '，当地运营商会发送到账短信') + '</p>';
+      steps = '';
+      actions = '<button class="btn wide" id="act-orders">查看订单</button><button class="btn wide ghost" id="act-again">再充一笔</button>';
+    } else if (o.status === 'wait') {
+      head = '<div class="mark wait">' + ICON_WAIT + '</div><h2>充值处理中</h2><p>' + o.op.name + ' 排队中，预计 30 分钟内到账<br>到账后会通过短信通知你</p>';
+      steps = '<ul class="steps"><li class="done">付款成功 · ' + o.time.slice(-5) + '</li><li class="done">已提交 ' + o.op.name + '</li><li class="cur">运营商处理中</li><li>话费到账</li></ul>';
+      actions = '<button class="btn wide" id="act-orders">查看订单</button><button class="btn wide ghost" id="act-home">返回首页</button>';
+    } else {
+      head = '<div class="mark fail">' + ICON_FAIL + '</div><h2>充值失败</h2><p>' + o.reason + '<br>款项已原路退回' + o.pm + '，1–3 个工作日到账</p>';
+      steps = '<ul class="steps"><li class="done">付款成功 · ' + o.time.slice(-5) + '</li><li class="done">已提交 ' + o.op.name + '</li><li class="bad">运营商拒绝</li><li class="done">已发起退款 ' + money(o.price) + '</li></ul>';
+      actions = '<button class="btn wide" id="act-retry">检查号码后重试</button><button class="btn wide ghost" id="act-service">联系客服</button><button class="btn wide ghost" id="act-orders">查看订单</button>';
+    }
+    $('res-body').innerHTML = head +
+      '<div class="big-amt">' + o.face.toLocaleString('en-US') + '<small>' + (c.code === 'CN' ? '元' : c.cur) + '</small></div>' +
+      '<div class="big-sub">' + (c.code === 'CN' ? '' : '实付 ' + money(o.price) + ' · ') + c.flag + ' ' + c.name + '</div>' +
+      '<div class="result-card card">' +
+      '<div class="row"><span>充值号码</span><span>' + fullNum(c, o.phone) + '</span></div>' +
+      '<div class="row"><span>运营商</span><span>' + o.op.name + '</span></div>' +
+      '<div class="row"><span>实付</span><span>' + money(o.price) + ' · ' + o.pm + '</span></div>' +
+      '<div class="row"><span>订单号</span><span>' + o.no + '</span></div>' +
+      '</div>' + steps + '<div class="actions">' + actions + '</div>';
+    var b;
+    if ((b = $('act-orders'))) b.addEventListener('click', openOrders);
+    if ((b = $('act-again'))) b.addEventListener('click', function () { goHome(true); });
+    if ((b = $('act-home'))) b.addEventListener('click', function () { goHome(false); });
+    if ((b = $('act-retry'))) b.addEventListener('click', function () { goHome(false); phoneEl.focus(); });
+    if ((b = $('act-service'))) b.addEventListener('click', function () { openService(); });
+  }
+  $('res-close').addEventListener('click', function () { goHome(false); });
+  function goHome(reset) {
+    if (reset) { phoneEl.value = ''; state.op = null; state.opAuto = false; }
+    state.face = null; state.custom = false;
+    onPhone(); show('home');
+  }
+
+  // ---------- 订单 ----------
+  function openOrders() { renderOrders(); show('orders'); setStep('orders'); log('查看充值记录'); }
+  function renderOrders() {
+    var box = $('orders-list'); box.innerHTML = '';
+    if (!state.orders.length) {
+      box.innerHTML = '<div class="empty-orders">还没有充值记录<br><button type="button" id="empty-go">去充值</button></div>';
+      $('empty-go').addEventListener('click', function () { goHome(false); });
+      return;
+    }
+    var ST = { ok: ['ok', '已到账'], wait: ['wait', '处理中'], fail: ['fail', '已退款'] };
+    state.orders.forEach(function (o) {
+      var c = byCode(o.cc); var d = document.createElement('div'); d.className = 'card order'; d.tabIndex = 0;
+      d.innerHTML = '<div class="av" style="background:' + o.op.color + (o.op.light ? ';color:#1B2430' : '') + '">' + o.op.av + '</div><div class="body">' +
+        '<div class="t"><b><span class="flag">' + c.flag + '</span> ' + fullNum(c, o.phone) + '</b><span class="amt">' + (c.code === 'CN' ? o.face + ' 元' : fmtLocal(o.face, c.cur)) + '</span></div>' +
+        '<div class="m"><span>' + o.op.name + ' · ' + o.time + ' · ' + money(o.price) + '</span><span class="st ' + ST[o.status][0] + '">' + ST[o.status][1] + '</span></div>' +
+        '</div>';
+      d.addEventListener('click', function () { renderResult(o); show('result'); setStep('result'); });
+      d.addEventListener('keydown', function (e) { if (e.key === 'Enter') d.click(); });
+      box.appendChild(d);
+    });
+  }
+  $('home-right').addEventListener('click', openOrders);
+  $('orders-back').addEventListener('click', function () { goHome(false); });
+  document.querySelectorAll('.tabs button').forEach(function (b) {
+    b.addEventListener('click', function () { state.nav = []; b.dataset.tab === 'orders' ? openOrders() : b.dataset.tab === 'me' ? openMe() : goHome(false); });
+  });
+
+  // ---------- 导航（权益/客服页返回上一页） ----------
+  function curView() { var v = document.querySelector('.view.on'); return v ? v.id.slice(2) : 'home'; }
+  function go(view) { var cv = curView(); if (cv !== view) state.nav.push(cv); show(view); }
+  function back() { var v = state.nav.pop() || 'home'; if (v === 'processing') v = 'home'; show(v); }
+
+  // ---------- 登录 ----------
+  var DEMO_CODE = '246810';
+  var USER_PHONE = '13812345678';
+  function openLogin(next) {
+    state.loginNext = next || null;
+    $('login-phone').value = ''; $('login-code').value = ''; $('login-err').textContent = '';
+    $('login-phone-wrap').classList.remove('bad'); $('login-code-wrap').classList.remove('bad');
+    $('send-code').disabled = false; $('send-code').textContent = '获取验证码';
+    $('login-sheet').classList.add('on'); $('login-phone').focus();
+    log('打开登录');
+  }
+  function closeLogin() { $('login-sheet').classList.remove('on'); state.loginNext = null; }
+  function doLogin(phone) {
+    state.user = { phone: phone, name: '周', level: '黄金会员', points: 1280, spent: 320, next: 500, since: '2024-03' };
+    $('login-sheet').classList.remove('on');
+    toast('登录成功'); log('用户登录：' + phone.slice(0, 3) + '****' + phone.slice(-4));
+    renderPerk(); renderGrid(); updatePaybar(); renderMe(); renderBenefits();
+    var next = state.loginNext; state.loginNext = null; if (next) next();
+  }
+  function logout() {
+    state.user = null; toast('已退出登录'); log('用户退出登录');
+    renderPerk(); renderGrid(); updatePaybar(); renderMe(); renderBenefits();
+  }
+  $('login-close').addEventListener('click', closeLogin);
+  $('login-terms-link').addEventListener('click', function (e) { e.preventDefault(); closeLogin(); openTerms(); });
+  $('login-privacy-link').addEventListener('click', function (e) { e.preventDefault(); closeLogin(); openPrivacy(); });
+  $('login-sheet').addEventListener('click', function (e) { if (e.target === $('login-sheet')) closeLogin(); });
+  $('login-phone').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 11); $('login-phone-wrap').classList.remove('bad'); $('login-err').textContent = ''; });
+  $('login-code').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); $('login-code-wrap').classList.remove('bad'); $('login-err').textContent = ''; });
+  $('send-code').addEventListener('click', function () {
+    var ph = $('login-phone').value;
+    if (!/^1[3-9]\d{9}$/.test(ph)) { $('login-phone-wrap').classList.add('bad'); $('login-err').textContent = '请输入正确的手机号'; $('login-phone').focus(); return; }
+    var btn = this, left = 60; btn.disabled = true; btn.textContent = '已发送 ' + left + 's';
+    var t = setInterval(function () { left--; if (left <= 0 || !$('login-sheet').classList.contains('on')) { clearInterval(t); btn.disabled = false; btn.textContent = '重新获取'; } else btn.textContent = '已发送 ' + left + 's'; }, 1000);
+    setTimeout(function () { $('login-code').value = DEMO_CODE; toast('验证码已发送（演示：' + DEMO_CODE + '）'); $('login-code').focus(); }, 500);
+    log('发送验证码到 ' + ph.slice(0, 3) + '****' + ph.slice(-4));
+  });
+  $('login-submit').addEventListener('click', function () {
+    var ph = $('login-phone').value, code = $('login-code').value;
+    if (!/^1[3-9]\d{9}$/.test(ph)) { $('login-phone-wrap').classList.add('bad'); $('login-err').textContent = '请输入正确的手机号'; return; }
+    if (code !== DEMO_CODE) { $('login-code-wrap').classList.add('bad'); $('login-err').textContent = code ? '验证码不正确，请重新输入' : '请先获取验证码'; return; }
+    doLogin(ph);
+  });
+  $('login-quick').addEventListener('click', function () { doLogin(USER_PHONE); });
+
+  // ---------- 首页权益条 ----------
+  function renderPerk() {
+    var el = $('perk-strip'), u = state.user;
+    el.classList.toggle('guest', !u);
+    if (u) { $('perk-title').textContent = u.level + ' · 跨境充值已享 98 折会员价'; $('perk-sub').textContent = '积分 ' + u.points.toLocaleString('en-US') + ' · 到账保障 · 汇率锁定 · 查看全部权益'; }
+    else { $('perk-title').textContent = '登录享专属权益'; $('perk-sub').textContent = '跨境充值 98 折 · 首单立减 ¥3 · 24 小时到账保障'; }
+  }
+  $('perk-strip').addEventListener('click', function () { openBenefits(); });
+
+  // ---------- 我的 ----------
+  var ICO = {
+    orders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
+    star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
+    headset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13a8 8 0 0 1 16 0"/><path d="M4 13v4a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2zM20 13v4a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"/><path d="M12 21h4"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18h4"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5"/><path d="M5 13v8h14v-8M12 8v13M12 8c-2-3-6-3-6-1s4 1 6 1zm0 0c2-3 6-3 6-1s-4 1-6 1z"/></svg>',
+    coin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 9.5c0-1 1.3-1.5 3-1.5s3 .5 3 1.5-1.3 1.5-3 1.5-3 .5-3 1.5 1.3 1.5 3 1.5 3-.5 3-1.5M12 6v2M12 16v2"/></svg>'
+  };
+  function maskCN(ph) { return ph.slice(0, 3) + ' **** ' + ph.slice(-4); }
+  function renderMe() {
+    var u = state.user, box = $('me-body'), saved = state.orders.filter(function (o) { return o.status !== 'fail'; }).reduce(function (n, o) { var c = byCode(o.cc); return n + (c.code === 'CN' ? o.face - o.price : 0); }, 0);
+    var head = u
+      ? '<div class="card me-head"><div class="me-av">' + u.name + '</div><div class="me-info"><b>' + maskCN(u.phone) + '</b><span class="lvl">' + u.level + '</span><span> · 积分 ' + u.points.toLocaleString('en-US') + '</span></div><button class="btn sm ghost" id="me-benefits-btn" type="button">权益</button></div>' +
+        '<div class="card stats"><div><b>' + state.orders.length + '</b><span>充值次数</span></div><div><b>' + money(saved + 12.4) + '</b><span>累计节省</span></div><div><b>' + u.points.toLocaleString('en-US') + '</b><span>可用积分</span></div></div>'
+      : '<div class="card me-head"><div class="me-av guest">' + ICO.user + '</div><div class="me-info"><b>未登录</b><span>登录后查看订单、享受专属权益</span></div><button class="btn sm" id="me-login" type="button">登录 / 注册</button></div>';
+    var menu = '<div class="card menu">' +
+      '<button class="mi" data-go="orders" type="button"><span class="mico">' + ICO.orders + '</span><span class="mtxt">充值记录</span><span class="cnt">' + (state.orders.length ? state.orders.length + ' 笔' : '') + '</span><span class="chev">›</span></button>' +
+      '<button class="mi" data-go="benefits" type="button"><span class="mico">' + ICO.star + '</span><span class="mtxt">专属权益</span><span class="cnt">' + (u ? u.level : '登录后享') + '</span><span class="chev">›</span></button>' +
+      '<button class="mi" data-go="service" type="button"><span class="mico">' + ICO.headset + '</span><span class="mtxt">客户服务</span><span class="cnt">9:00–24:00</span><span class="chev">›</span></button>' +
+      '<button class="mi" data-go="numbers" type="button"><span class="mico">' + ICO.phone + '</span><span class="mtxt">常用号码</span><span class="cnt">' + (u ? '3 个' : '') + '</span><span class="chev">›</span></button>' +
+      '<button class="mi" data-go="settings" type="button"><span class="mico">' + ICO.gear + '</span><span class="mtxt">设置</span><span class="chev">›</span></button>' +
+      '</div>';
+    var about = '<div class="card menu">' +
+      '<button class="mi" data-go="terms" type="button"><span class="mico">' + ICO.doc + '</span><span class="mtxt">用户服务协议</span><span class="chev">›</span></button>' +
+      '<button class="mi" data-go="privacy" type="button"><span class="mico">' + ICO.shield + '</span><span class="mtxt">隐私政策</span><span class="chev">›</span></button>' +
+      '</div>' + (u ? '<button class="logout" id="me-logout" type="button">退出登录</button>' : '');
+    box.innerHTML = head + menu + about;
+    var b;
+    if ((b = $('me-login'))) b.addEventListener('click', function () { openLogin(); });
+    if ((b = $('me-logout'))) b.addEventListener('click', logout);
+    if ((b = $('me-benefits-btn'))) b.addEventListener('click', openBenefits);
+    box.querySelectorAll('.mi').forEach(function (m) {
+      m.addEventListener('click', function () {
+        var g = m.dataset.go;
+        if (g === 'orders') { if (state.user) openOrders(); else openLogin(openOrders); }
+        else if (g === 'benefits') openBenefits();
+        else if (g === 'service') openService();
+        else if (g === 'numbers') { if (state.user) toast('常用号码：本机、阿姨（菲律宾）、印尼同事（演示）'); else openLogin(); }
+        else if (g === 'terms') openTerms();
+        else if (g === 'privacy') openPrivacy();
+        else toast('设置（演示未实现）');
+      });
+    });
+  }
+  function openMe() { renderMe(); show('me'); log('打开个人中心' + (state.user ? '（已登录）' : '（未登录）')); }
+
+  // ---------- 专属权益 ----------
+  var BENEFITS = [
+    { ico: 'coin', t: '跨境会员价', d: '全球充值实付 98 折，付款页自动抵扣', member: true },
+    { ico: 'gift', t: '首单立减', d: '新用户首笔跨境充值立减 ¥3', member: true },
+    { ico: 'shield', t: '到账保障', d: '24 小时未到账原路退款，无需申请', member: false },
+    { ico: 'lock', t: '汇率锁定', d: '下单后 10 分钟内汇率不变，付款不吃亏', member: true },
+    { ico: 'star', t: '积分抵扣', d: '每消费 ¥1 得 1 分，100 分抵扣 ¥1', member: true },
+    { ico: 'headset', t: '专属客服', d: '会员优先接入人工客服', member: true }
+  ];
+  function renderBenefits() {
+    var u = state.user, box = $('benefits-body');
+    var head = u
+      ? '<div class="card vip"><div class="lv">' + u.level + '</div><div class="sub">积分 ' + u.points.toLocaleString('en-US') + ' · ' + u.since + ' 加入 · 有效期至 2027-03-31</div><div class="bar"><i style="width:' + Math.round(u.spent / u.next * 100) + '%"></i></div><div class="prog"><span>再充 ' + money(u.next - u.spent) + ' 升级铂金会员</span><span>' + money(u.spent) + ' / ' + money(u.next) + '</span></div></div>'
+      : '<div class="card vip guest"><div><div class="lv">登录即享会员权益</div><div class="sub">新用户注册即为白银会员</div></div><button class="btn sm" id="benefits-login" type="button">登录</button></div>';
+    var list = '<div class="card">' + BENEFITS.map(function (b) {
+      var on = !b.member || !!u;
+      return '<div class="bf"><span class="bico">' + ICO[b.ico] + '</span><span class="bt"><b>' + b.t + '</b><span>' + b.d + '</span></span><span class="st ' + (on ? 'ok' : 'off') + '">' + (on ? '已生效' : '登录后生效') + '</span></div>';
+    }).join('') + '</div>' +
+      '<div class="card"><div class="sec-h"><h3>会员等级</h3><span>按累计充值金额</span></div><div class="contact"><span>白银会员</span><span>注册即得 · 到账保障</span></div><div class="contact"><span>黄金会员</span><span>累计 ¥200 · 98 折 + 汇率锁定</span></div><div class="contact"><span>铂金会员</span><span>累计 ¥500 · 96 折 + 专属客服</span></div></div>';
+    box.innerHTML = head + list;
+    var b; if ((b = $('benefits-login'))) b.addEventListener('click', function () { openLogin(); });
+  }
+  function openBenefits() { renderBenefits(); go('benefits'); log('查看专属权益'); }
+  $('benefits-back').addEventListener('click', back);
+
+  // ---------- 客户服务 ----------
+  function openService() { go('service'); log('打开客户服务'); }
+  $('service-back').addEventListener('click', back);
+
+  function openAgreement() { go('agreement'); log('查看充值协议'); }
+  $('agreement-back').addEventListener('click', back);
+  $('agreement-link').addEventListener('click', function (e) { e.preventDefault(); openAgreement(); });
+
+  function openTerms() { go('terms'); log('查看用户服务协议'); }
+  $('terms-back').addEventListener('click', back);
+  function openPrivacy() { go('privacy'); log('查看隐私政策'); }
+  $('privacy-back').addEventListener('click', back);
+  $('home-service').addEventListener('click', openService);
+  $('me-service').addEventListener('click', openService);
+
+  var REPLIES = [
+    [/到账|多久|没到|未到/, '大部分运营商即时到账，部分需 5–30 分钟，到账后当地运营商会发短信。超过 24 小时未到账会自动原路退款。'],
+    [/退款|退回|退钱/, '充值失败的订单会在 1–3 个工作日按原支付方式退回，可在「充值记录」查看退款进度。'],
+    [/汇率|服务费|手续费|贵/, '实付金额按下单时的参考汇率计算，跨境充值含 3% 服务费，会员享 98 折，付款后金额不再变动。'],
+    [/充错|号码|错了|取消/, '充值成功后无法撤回。若订单仍在处理中，请把订单号发给我，我们会尝试拦截。'],
+    [/发票/, '支持电子发票，在订单详情页申请，1 个工作日内发送到邮箱。'],
+    [/人工|真人|转接/, '已为您转接人工客服，当前排队 2 位，预计等待 1 分钟。' + '（演示）'],
+    [/GZ\d+/i, '已查到该订单，状态正常，如有问题我们会第一时间跟进。']
+  ];
+  function addMsg(text, me) {
+    var d = document.createElement('div'); d.className = 'msg ' + (me ? 'me' : 'bot'); d.textContent = text;
+    $('msgs').appendChild(d); $('msgs').scrollTop = $('msgs').scrollHeight;
+  }
+  function botReply(q) {
+    var r = '收到，请描述您遇到的问题，或输入「人工」转接人工客服。';
+    for (var i = 0; i < REPLIES.length; i++) if (REPLIES[i][0].test(q)) { r = REPLIES[i][1]; break; }
+    setTimeout(function () { addMsg(r, false); }, 600);
+  }
+  function openChat() {
+    $('msgs').innerHTML = '';
+    addMsg('您好' + (state.user ? '，' + state.user.level + '用户' : '') + '，这里是话费充值客服。可以问我到账时间、退款、汇率、充错号码等问题。', false);
+    var last = state.orders[0];
+    if (last) addMsg('您最近一笔订单 ' + last.no + '（' + byCode(last.cc).name + ' · ' + last.op.name + '）状态：' + ({ ok: '已到账', wait: '处理中', fail: '已退款' })[last.status] + '。', false);
+    $('chips').innerHTML = '';
+    ['充值多久到账', '退款进度', '汇率怎么算', '转人工'].forEach(function (q) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = q;
+      b.addEventListener('click', function () { addMsg(q, true); botReply(q); });
+      $('chips').appendChild(b);
+    });
+    $('chat-sheet').classList.add('on'); $('chat-in').value = ''; $('chat-in').focus();
+    log('打开在线客服');
+  }
+  $('svc-chat').addEventListener('click', openChat);
+  $('chat-close').addEventListener('click', function () { $('chat-sheet').classList.remove('on'); });
+  $('chat-sheet').addEventListener('click', function (e) { if (e.target === $('chat-sheet')) $('chat-sheet').classList.remove('on'); });
+  $('chat-form').addEventListener('submit', function (e) {
+    e.preventDefault(); var q = $('chat-in').value.trim(); if (!q) return;
+    addMsg(q, true); $('chat-in').value = ''; botReply(q);
+  });
+
+  // ---------- 场景 ----------
+  document.querySelectorAll('input[name=sc]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      state.scenario = r.value;
+      var names = { ok: '正常到账', slow: '到账延迟', fail: '充值失败', maint: '通道维护' };
+      log('切换场景：' + names[r.value]);
+      renderOps(); renderGrid(); updatePaybar();
+      if (r.value === 'maint' && !state.op) toast('提示：选择运营商后查看维护效果');
+    });
+  });
+
+  // ---------- 时钟 & 初始化 ----------
+  function tick() { var d = new Date(); $('clock').textContent = d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2); }
+  tick(); setInterval(tick, 15000);
+  $('stat-c').textContent = COUNTRIES.length; $('stat-o').textContent = COUNTRIES.reduce(function (n, c) { return n + c.ops.length; }, 0);
+  setCountry('CN', true); setStep('country'); renderPerk(); renderMe(); renderBenefits();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+node_modules/
+.pnpm-store/
+.turbo/
+archive/
+dist/
+coverage/
+pnpm-lock.yaml
+docs/**/*.docx
+docs/02-product-design/prototypes/legacy/**

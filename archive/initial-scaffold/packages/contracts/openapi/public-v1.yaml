@@ -1,0 +1,265 @@
+openapi: 3.1.0
+info:
+  title: WoLinkup Public API
+  version: 0.1.0
+  description: Starter contract for quotes and top-up orders. Authentication and payment endpoints are refined per channel.
+servers:
+  - url: https://api.example.invalid/v1
+paths:
+  /quotes:
+    post:
+      operationId: createQuote
+      summary: Create a time-limited top-up quote
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuoteRequest"
+      responses:
+        "201":
+          description: Quote created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quote"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /topup-orders:
+    post:
+      operationId: createTopupOrder
+      summary: Create an order from a valid quote
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quoteId, consentVersion]
+              properties:
+                quoteId:
+                  type: string
+                  format: uuid
+                consentVersion:
+                  type: string
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopupOrder"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /topup-orders/{orderId}:
+    get:
+      operationId: getTopupOrder
+      summary: Get the caller-visible order state
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopupOrder"
+        "404":
+          $ref: "#/components/responses/Problem"
+components:
+  parameters:
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+  responses:
+    Problem:
+      description: RFC 9457 problem detail
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Money:
+      type: object
+      additionalProperties: false
+      required: [amountMinor, currency, exponent]
+      properties:
+        amountMinor:
+          type: string
+          pattern: "^-?[0-9]+$"
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        exponent:
+          type: integer
+          minimum: 0
+          maximum: 3
+    CreateQuoteRequest:
+      type: object
+      additionalProperties: false
+      required: [channel, countryCode, phoneNumber, productId, displayCurrency]
+      properties:
+        channel:
+          enum: [consumer_global, consumer_cn, partner_api]
+        countryCode:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        phoneNumber:
+          type: string
+          minLength: 4
+          maxLength: 32
+        operatorId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        displayCurrency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        promotionCodes:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+    Quote:
+      type: object
+      required:
+        [
+          id,
+          productId,
+          operatorId,
+          recipientE164,
+          faceValue,
+          salePrice,
+          serviceFee,
+          discount,
+          payableAmount,
+          expiresAt,
+          pricingVersion,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        operatorId:
+          type: string
+          format: uuid
+        recipientE164:
+          type: string
+        faceValue:
+          $ref: "#/components/schemas/Money"
+        salePrice:
+          $ref: "#/components/schemas/Money"
+        serviceFee:
+          $ref: "#/components/schemas/Money"
+        discount:
+          $ref: "#/components/schemas/Money"
+        payableAmount:
+          $ref: "#/components/schemas/Money"
+        expiresAt:
+          type: string
+          format: date-time
+        pricingVersion:
+          type: string
+    TopupOrder:
+      type: object
+      required:
+        [
+          id,
+          publicNumber,
+          status,
+          recipientE164Masked,
+          countryCode,
+          operatorId,
+          productId,
+          payableAmount,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        publicNumber:
+          type: string
+        status:
+          enum:
+            [
+              pending_payment,
+              payment_processing,
+              paid,
+              routing,
+              submitted,
+              processing,
+              succeeded,
+              failed,
+              refund_pending,
+              refunded,
+              manual_review,
+              cancelled,
+            ]
+        recipientE164Masked:
+          type: string
+        countryCode:
+          type: string
+        operatorId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        payableAmount:
+          $ref: "#/components/schemas/Money"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required: [type, title, status, code, correlationId]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
