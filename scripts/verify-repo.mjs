@@ -78,7 +78,12 @@ const operationsPrototypeCount = await verifyChecksums(
   "docs/02-product-design/prototypes/operations-console/v1.0/SHA256SUMS",
   "Operations console prototype V1.0",
 );
-const prototypeCount = legacyPrototypeCount + operationsPrototypeCount;
+const pcPortalPrototypeCount = await verifyChecksums(
+  "docs/02-product-design/prototypes/pc-portal/v1.0/SHA256SUMS",
+  "PC portal prototype V1.0",
+);
+const prototypeCount =
+  legacyPrototypeCount + operationsPrototypeCount + pcPortalPrototypeCount;
 
 const packagePatterns = [
   ["apps", 1],

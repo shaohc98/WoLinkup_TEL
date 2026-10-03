@@ -9,4 +9,5 @@ coverage/
 pnpm-lock.yaml
 docs/**/*.docx
 docs/02-product-design/prototypes/**/*.html
+docs/02-product-design/prototypes/pc-portal/v1.0/**
 docs/02-product-design/prototypes/legacy/**
