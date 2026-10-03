@@ -70,10 +70,15 @@ const documentCount = await verifyChecksums(
   "docs/SHA256SUMS",
   "Formal document baseline",
 );
-const prototypeCount = await verifyChecksums(
+const legacyPrototypeCount = await verifyChecksums(
   "docs/02-product-design/prototypes/legacy/SHA256SUMS",
-  "Prototype baseline",
+  "Legacy prototype baseline",
 );
+const operationsPrototypeCount = await verifyChecksums(
+  "docs/02-product-design/prototypes/operations-console/v1.0/SHA256SUMS",
+  "Operations console prototype V1.0",
+);
+const prototypeCount = legacyPrototypeCount + operationsPrototypeCount;
 
 const packagePatterns = [
   ["apps", 1],

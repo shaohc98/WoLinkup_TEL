@@ -4,3 +4,4 @@
 *.jpeg binary
 *.gif binary
 *.pdf binary
+docs/02-product-design/prototypes/**/*.html -text -diff -whitespace
