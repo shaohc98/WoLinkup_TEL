@@ -27,7 +27,7 @@ catalog:
   "helmet": "^8.0.0"
   "kysely": "^0.28.0"
   "lucide-react": "^0.468.0"
-  "next": "^16.0.0"
+  "next": "^16.4.0"
   "pg": "^8.13.0"
   "pg-boss": "^12.0.0"
   "pino": "^9.0.0"
